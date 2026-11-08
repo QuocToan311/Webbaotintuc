@@ -134,7 +134,7 @@ function renderRssNews() {
       <article class="sub-hero-card" data-rss-id="${escapeAttribute(article.id)}">
         <div class="card-media">
           <span class="category-tag blue">${escapeHtml(article.category)}</span>
-          <img src="${escapeAttribute(imageUrl(article.image || fallbackImage(article)))}" alt="${escapeAttribute(article.title)}" loading="lazy">
+          <img src="${escapeAttribute(imageUrl(article.image || fallbackImage(article)))}" alt="${escapeAttribute(article.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80'">
         </div>
         <div class="card-body">
           <h3 class="card-title">${escapeHtml(article.title)}</h3>
@@ -158,7 +158,7 @@ function renderRssNews() {
   if (grid) {
     grid.innerHTML = visible.map(article => `
       <article class="news-card" data-rss-id="${escapeAttribute(article.id)}">
-        <div class="card-media"><span class="category-tag blue">${escapeHtml(article.category)}</span><img src="${escapeAttribute(imageUrl(article.image || fallbackImage(article)))}" alt="${escapeAttribute(article.title)}" loading="lazy"></div>
+        <div class="card-media"><span class="category-tag blue">${escapeHtml(article.category)}</span><img src="${escapeAttribute(imageUrl(article.image || fallbackImage(article)))}" alt="${escapeAttribute(article.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80'"></div>
         <div class="card-body"><h3 class="card-title">${escapeHtml(article.title)}</h3><p class="card-sapo">${escapeHtml(article.sapo || '')}</p><div class="card-meta"><span>${escapeHtml(article.publishedAt)}</span><span>${escapeHtml(article.source || '')}</span></div></div>
       </article>
     `).join('');
@@ -176,7 +176,17 @@ function findRssArticle(id) {
 }
 
 function fallbackImage(article) {
-  return `https://source.unsplash.com/800x500/?news,${encodeURIComponent(article.category || 'news')}`;
+  const cat = (article?.category || '').toLowerCase();
+  if (cat.includes('kinh') || cat.includes('tài')) {
+    return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('công') || cat.includes('khoa') || cat.includes('ai')) {
+    return 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('thao')) {
+    return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80';
 }
 
 function imageUrl(url) {
@@ -468,10 +478,21 @@ function initAudioPlayer() {
 }
 
 /* ==========================================================================
-   6. Reader Modal (Chế Độ Đọc Bài Báo Chi Tiết & Bình Luận)
+   6. Reader Modal (Chế Độ Đọc Bài Báo Chi Tiết & Bình Luận & Dịch Thuật)
    ========================================================================== */
 let currentArticleData = null;
+let currentOriginalContent = null;
+let currentModalLang = 'vi';
 let currentFontSize = 17;
+
+const LANG_TTS_MAP = {
+  'vi': 'vi-VN',
+  'en': 'en-US',
+  'fr': 'fr-FR',
+  'zh-CN': 'zh-CN',
+  'ja': 'ja-JP',
+  'ko': 'ko-KR'
+};
 
 function initArticleReader() {
   const modal = document.getElementById('reader-modal');
@@ -479,6 +500,7 @@ function initArticleReader() {
   const fontPlusBtn = document.getElementById('font-plus-btn');
   const fontMinusBtn = document.getElementById('font-minus-btn');
   const commentForm = document.getElementById('modal-comment-form');
+  const translateSelect = document.getElementById('modal-translate-select');
 
   if (closeBtn) closeBtn.addEventListener('click', closeReaderModal);
   if (modal) {
@@ -490,6 +512,13 @@ function initArticleReader() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeReaderModal();
   });
+
+  if (translateSelect) {
+    translateSelect.addEventListener('change', async (e) => {
+      const targetLang = e.target.value;
+      await translateModalArticle(targetLang);
+    });
+  }
 
   if (fontPlusBtn) {
     fontPlusBtn.addEventListener('click', () => {
@@ -548,8 +577,21 @@ function updateArticleFontSize() {
 
 function openReaderModal(article) {
   currentArticleData = article;
+  currentModalLang = 'vi';
+  const translateSelect = document.getElementById('modal-translate-select');
+  if (translateSelect) translateSelect.value = 'vi';
+
   const modal = document.getElementById('reader-modal');
   if (!modal) return;
+
+  const defaultContent = article.content || `<p>${article.sapo || ''}</p><p>Nội dung chi tiết đang được các phóng viên tiếp tục cập nhật...</p>`;
+
+  // Lưu trữ bản gốc để có thể hoàn nguyên tức thì khi chuyển về tiếng Việt
+  currentOriginalContent = {
+    title: article.title || '',
+    sapo: article.sapo || '',
+    content: defaultContent
+  };
 
   document.getElementById('modal-cat-tag').textContent = article.category || 'Tin Tiêu Điểm';
   document.getElementById('modal-title').textContent = article.title;
@@ -573,7 +615,7 @@ function openReaderModal(article) {
 
   const modalBody = document.getElementById('modal-body-content');
   if (modalBody) {
-    modalBody.innerHTML = article.content || `<p>${article.sapo}</p><p>Nội dung chi tiết đang được các phóng viên chiến trường tiếp tục cập nhật theo diễn biến mới nhất của sự kiện...</p>`;
+    modalBody.innerHTML = defaultContent;
   }
 
   // Comments
@@ -619,6 +661,14 @@ async function loadFullArticle(article) {
     if (!response.ok || !result.ok) throw new Error(result.error || 'Không thể lấy toàn văn');
     Object.assign(article, result.article);
     if (currentArticleData !== article) return;
+
+    // Cập nhật lại bản gốc sau khi tải được bài đầy đủ
+    currentOriginalContent = {
+      title: article.title,
+      sapo: article.sapo || '',
+      content: article.content || '<p>Bài viết chưa có nội dung toàn văn.</p>'
+    };
+
     const modalTitle = document.getElementById('modal-title');
     const modalSapo = document.getElementById('modal-sapo');
     const modalBody = document.getElementById('modal-body-content');
@@ -634,6 +684,77 @@ async function loadFullArticle(article) {
   } catch (error) {
     console.error('Article crawling failed:', error);
     showToast('Không thể tải toàn văn, đang hiển thị phần tóm tắt');
+  }
+}
+
+async function translateText(text, targetLang) {
+  if (!text || !text.trim() || targetLang === 'vi') return text;
+  try {
+    const res = await fetch(`/api/translate?text=${encodeURIComponent(text)}&to=${encodeURIComponent(targetLang)}&from=vi`);
+    const json = await res.json();
+    if (json.ok && json.translatedText) return json.translatedText;
+  } catch (err) {
+    console.warn('Translate error:', err);
+  }
+  return text;
+}
+
+async function translateModalArticle(targetLang) {
+  if (!currentOriginalContent) return;
+  currentModalLang = targetLang;
+
+  const titleEl = document.getElementById('modal-title');
+  const sapoEl = document.getElementById('modal-sapo');
+  const bodyEl = document.getElementById('modal-body-content');
+
+  // Khôi phục bản gốc tiếng Việt
+  if (targetLang === 'vi') {
+    if (titleEl) titleEl.textContent = currentOriginalContent.title;
+    if (sapoEl) sapoEl.textContent = currentOriginalContent.sapo;
+    if (bodyEl) bodyEl.innerHTML = currentOriginalContent.content;
+    showToast('Đã chuyển về bản tin tiếng Việt gốc');
+    return;
+  }
+
+  showToast('Đang dịch bài viết sang ngôn ngữ mới...');
+
+  try {
+    // Dịch tiêu đề
+    const translatedTitlePromise = translateText(currentOriginalContent.title, targetLang);
+
+    // Dịch sapo
+    const translatedSapoPromise = currentOriginalContent.sapo ? translateText(currentOriginalContent.sapo, targetLang) : Promise.resolve('');
+
+    // Dịch các đoạn văn bản trong phần thân bài
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = currentOriginalContent.content;
+    const paragraphs = Array.from(tempDiv.querySelectorAll('p')).filter(p => p.textContent.trim().length > 0);
+
+    // Giới hạn dịch tối đa 5 đoạn đầu tiên để bảo đảm tốc độ và quota API
+    const paragraphsToTranslate = paragraphs.slice(0, 5);
+    const translatedParagraphsPromises = paragraphsToTranslate.map(p => translateText(p.textContent.trim(), targetLang));
+
+    const [transTitle, transSapo, ...transParas] = await Promise.all([
+      translatedTitlePromise,
+      translatedSapoPromise,
+      ...translatedParagraphsPromises
+    ]);
+
+    // Kiểm tra nếu người dùng chưa đổi ngôn ngữ khác trong khi chờ
+    if (currentModalLang !== targetLang) return;
+
+    if (titleEl) titleEl.textContent = transTitle;
+    if (sapoEl) sapoEl.textContent = transSapo;
+
+    if (bodyEl && transParas.length > 0) {
+      bodyEl.innerHTML = transParas.map(text => `<p>${text}</p>`).join('') + 
+        `<div class="translation-indicator"><i class="fa-solid fa-circle-check"></i> Bài viết đã được dịch tự động bởi VNEWS AI Translation</div>`;
+    }
+
+    showToast('Bản dịch đã sẵn sàng!');
+  } catch (error) {
+    console.error('Translation failed:', error);
+    showToast('Không thể hoàn tất dịch thuật, vui lòng thử lại');
   }
 }
 
@@ -672,9 +793,12 @@ function closeReaderModal() {
     modal.classList.remove('active');
     document.body.style.overflow = '';
   }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
 }
 
-// Quick modal TTS trigger
+// Quick modal TTS trigger với hỗ trợ đa ngôn ngữ
 function playModalTTS() {
   if (!('speechSynthesis' in window)) {
     showToast('Trình duyệt không hỗ trợ phát giọng nói');
@@ -684,10 +808,10 @@ function playModalTTS() {
   const title = document.getElementById('modal-title').textContent;
   const sapo = document.getElementById('modal-sapo').textContent;
   const utterance = new SpeechSynthesisUtterance(`${title}. ${sapo}`);
-  utterance.lang = 'vi-VN';
+  utterance.lang = LANG_TTS_MAP[currentModalLang] || 'vi-VN';
   utterance.rate = 1.0;
   window.speechSynthesis.speak(utterance);
-  showToast('Đang đọc to bài viết qua giọng AI...');
+  showToast(`Đang phát giọng đọc AI (${utterance.lang})...`);
 }
 
 /* ==========================================================================

@@ -218,6 +218,39 @@ async function handleApi(req, res, url) {
       return sendJson(res, 502, { ok: false, error: `Không thể crawl bài viết: ${error.message}` });
     }
   }
+  if (url.pathname === '/api/translate') {
+    const text = url.searchParams.get('text') || '';
+    const targetLang = (url.searchParams.get('to') || 'en').toLowerCase();
+    const sourceLang = (url.searchParams.get('from') || 'vi').toLowerCase();
+
+    if (!text.trim()) {
+      return sendJson(res, 400, { ok: false, error: 'Thiếu nội dung cần dịch' });
+    }
+
+    const cacheKey = 'translate:' + sourceLang + ':' + targetLang + ':' + text.slice(0, 100) + ':' + text.length;
+    const cached = cache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return sendJson(res, 200, { ok: true, translatedText: cached.data, from: sourceLang, to: targetLang, cached: true });
+    }
+
+    try {
+      // Chunking if text is long
+      const textToTranslate = text.slice(0, 2500);
+      const myMemoryUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(textToTranslate) + '&langpair=' + sourceLang + '|' + targetLang;
+      const response = await fetch(myMemoryUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+      });
+      if (!response.ok) throw new Error('Dịch vụ dịch thuật trả về HTTP ' + response.status);
+      const data = await response.json();
+      const translatedText = data.responseData?.translatedText || text;
+
+      cache.set(cacheKey, { data: translatedText, expiresAt: Date.now() + 60 * 60 * 1000 });
+      return sendJson(res, 200, { ok: true, translatedText, from: sourceLang, to: targetLang });
+    } catch (error) {
+      return sendJson(res, 502, { ok: false, error: 'Không thể dịch: ' + error.message });
+    }
+  }
+
   if (url.pathname === '/api/image') {
     const imageUrl = url.searchParams.get('url');
     if (!imageUrl) return sendJson(res, 400, { ok: false, error: 'Thiếu URL ảnh' });
