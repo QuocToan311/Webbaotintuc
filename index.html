@@ -196,7 +196,6 @@
         </div>
       </div>
     </section>
-
     <!-- ====================================================================
          5. HERO SECTION: 3-Column Editorial Grid
          ==================================================================== -->
@@ -646,22 +645,37 @@
     <div class="reader-modal-card">
       
       <!-- Toolbar -->
-      <div class="modal-header-toolbar">
-        <div class="modal-tools">
-          <button class="tts-btn" onclick="playModalTTS()">
-            <i class="fa-solid fa-volume-high"></i> <span>Nghe AI đọc</span>
-          </button>
-          <button class="font-size-btn" id="font-minus-btn" title="Giảm cỡ chữ">A-</button>
-          <button class="font-size-btn" id="font-plus-btn" title="Tăng cỡ chữ">A+</button>
-          <button class="font-size-btn" onclick="showToast('Đã sao chép liên kết bài viết vào clipboard!')" title="Chia sẻ">
-            <i class="fa-solid fa-share-nodes"></i>
-          </button>
-        </div>
+        <!-- Toolbar -->
+        <div class="modal-header-toolbar">
+            <div class="modal-tools">
 
-        <button class="modal-close-btn" id="modal-close-btn" title="Đóng cửa sổ">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+                <!-- Nút nghe AI đọc -->
+                <button class="tts-btn" onclick="playModalTTS()">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span>Nghe AI đọc</span>
+                </button>
+
+                <!-- NÚT CHẾ ĐỘ ĐỌC TẬP TRUNG -->
+                <button class="focus-mode-btn" id="focus-mode-btn" type="button">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Chế độ đọc tập trung</span>
+                </button>
+
+                <!-- Điều chỉnh cỡ chữ -->
+                <button class="font-size-btn" id="font-minus-btn" title="Giảm cỡ chữ">A-</button>
+                <button class="font-size-btn" id="font-plus-btn" title="Tăng cỡ chữ">A+</button>
+
+                <!-- Chia sẻ -->
+                <button class="font-size-btn" onclick="showToast('Đã sao chép liên kết bài viết vào clipboard!')" title="Chia sẻ">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </button>
+
+            </div>
+
+            <button class="modal-close-btn" id="modal-close-btn" title="Đóng cửa sổ">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
 
       <!-- Scrollable Article Content -->
       <div class="modal-body-scroll">

@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   1. Live Clock & Calendar (Thời Gian & Lịch Thực Tế)
+   1. Live Clock & Calendar
    ========================================================================== */
 function initClockAndDate() {
   const dateEl = document.getElementById('current-date');
@@ -24,13 +24,13 @@ function initClockAndDate() {
   if (!dateEl) return;
 
   const daysVi = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-  
+
   function updateTime() {
     const now = new Date();
     const dayName = daysVi[now.getDay()];
     const dateStr = `${dayName}, ${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-    
+
     dateEl.textContent = dateStr;
     if (clockEl) clockEl.textContent = timeStr;
   }
@@ -40,7 +40,7 @@ function initClockAndDate() {
 }
 
 /* ==========================================================================
-   2. Breaking News Ticker (Thanh Tin Nóng Tự Động)
+   2. Breaking News Ticker
    ========================================================================== */
 function initTicker() {
   const tickerText = document.getElementById('ticker-text');
@@ -91,14 +91,14 @@ function initTicker() {
 }
 
 /* ==========================================================================
-   3. Dark / Light Theme Toggle (Chế Độ Sáng / Tối)
+   3. Dark / Light Theme Toggle
    ========================================================================== */
 function initThemeToggle() {
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   const themeIcon = document.getElementById('theme-icon');
   const themeLabel = document.getElementById('theme-label');
-  
-  const savedTheme = localStorage.getItem('vnews-theme') || 
+
+  const savedTheme = localStorage.getItem('vnews-theme') ||
     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
   applyTheme(savedTheme);
@@ -115,9 +115,11 @@ function initThemeToggle() {
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('vnews-theme', theme);
+
     if (themeIcon) {
       themeIcon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
     }
+
     if (themeLabel) {
       themeLabel.textContent = theme === 'dark' ? 'Chế độ Tối' : 'Chế độ Sáng';
     }
@@ -125,7 +127,7 @@ function initThemeToggle() {
 }
 
 /* ==========================================================================
-   4. Bookmarks System (Lưu & Quản Lý Bài Viết Đọc Sau)
+   4. Bookmarks System
    ========================================================================== */
 let bookmarks = JSON.parse(localStorage.getItem('vnews-bookmarks') || '[]');
 
@@ -153,6 +155,7 @@ function initBookmarks() {
 function openBookmarksDrawer() {
   const drawer = document.getElementById('bookmarks-drawer');
   const drawerBackdrop = document.getElementById('drawer-backdrop');
+
   if (drawer && drawerBackdrop) {
     renderBookmarksList();
     drawer.classList.add('active');
@@ -163,6 +166,7 @@ function openBookmarksDrawer() {
 function closeBookmarksDrawer() {
   const drawer = document.getElementById('bookmarks-drawer');
   const drawerBackdrop = document.getElementById('drawer-backdrop');
+
   if (drawer && drawerBackdrop) {
     drawer.classList.remove('active');
     drawerBackdrop.classList.remove('active');
@@ -171,22 +175,26 @@ function closeBookmarksDrawer() {
 
 function toggleBookmark(article) {
   const index = bookmarks.findIndex(item => item.id === article.id);
+
   if (index > -1) {
     bookmarks.splice(index, 1);
-    showToast(`Đã xóa khỏi danh sách đọc sau`);
+    showToast('Đã xóa khỏi danh sách đọc sau');
   } else {
     bookmarks.unshift(article);
-    showToast(`Đã lưu bài viết vào danh sách đọc sau`);
+    showToast('Đã lưu bài viết vào danh sách đọc sau');
   }
+
   localStorage.setItem('vnews-bookmarks', JSON.stringify(bookmarks));
   updateBookmarkUI();
 }
 
 function updateBookmarkUI() {
   const badge = document.getElementById('bookmark-count');
+
   if (badge) {
     badge.textContent = bookmarks.length;
   }
+
   renderBookmarksList();
 }
 
@@ -218,9 +226,8 @@ function renderBookmarksList() {
     </div>
   `).join('');
 }
-
 /* ==========================================================================
-   5. Interactive Audio Player (Phát Bản Tin Báo Nói 60s)
+   5. Interactive Audio Player
    ========================================================================== */
 function initAudioPlayer() {
   const playBtn = document.getElementById('audio-play-toggle');
@@ -234,21 +241,22 @@ function initAudioPlayer() {
 
   playBtn.addEventListener('click', () => {
     isPlaying = !isPlaying;
+
     if (isPlaying) {
-      container.classList.add('audio-playing');
+      if (container) container.classList.add('audio-playing');
       playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
       showToast('Đang phát bản tin tóm tắt 60s...');
-      
-      // Use Web Speech API if supported
+
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+
         const textToRead = "Đây là bản tin âm thanh nhanh của Thời Báo 24 Giờ. Hôm nay, Hội nghị Thượng đỉnh Trí tuệ Nhân tạo Toàn cầu 2026 chính thức khai mạc. Thị trường chứng khoán thăng hoa vượt mốc 1.288 điểm.";
+
         const utterance = new SpeechSynthesisUtterance(textToRead);
         utterance.lang = 'vi-VN';
         utterance.rate = 1.0;
-        utterance.onend = () => {
-          stopAudio();
-        };
+        utterance.onend = () => stopAudio();
+
         window.speechSynthesis.speak(utterance);
       }
 
@@ -256,10 +264,10 @@ function initAudioPlayer() {
         seconds++;
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
+
         if (timeDisplay) timeDisplay.textContent = `${mins}:${secs} / 01:00`;
-        if (seconds >= 60) {
-          stopAudio();
-        }
+
+        if (seconds >= 60) stopAudio();
       }, 1000);
     } else {
       stopAudio();
@@ -268,9 +276,10 @@ function initAudioPlayer() {
 
   function stopAudio() {
     isPlaying = false;
-    container.classList.remove('audio-playing');
+    if (container) container.classList.remove('audio-playing');
     playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     clearInterval(timerInterval);
+
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -278,7 +287,7 @@ function initAudioPlayer() {
 }
 
 /* ==========================================================================
-   6. Reader Modal (Chế Độ Đọc Bài Báo Chi Tiết & Bình Luận)
+   6. Reader Modal
    ========================================================================== */
 let currentArticleData = null;
 let currentFontSize = 17;
@@ -289,8 +298,13 @@ function initArticleReader() {
   const fontPlusBtn = document.getElementById('font-plus-btn');
   const fontMinusBtn = document.getElementById('font-minus-btn');
   const commentForm = document.getElementById('modal-comment-form');
+  const focusBtn = document.getElementById('focus-mode-btn');
+  const readerCard = modal?.querySelector('.reader-modal-card');
 
-  if (closeBtn) closeBtn.addEventListener('click', closeReaderModal);
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeReaderModal);
+  }
+
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeReaderModal();
@@ -301,6 +315,18 @@ function initArticleReader() {
     if (e.key === 'Escape') closeReaderModal();
   });
 
+  // Bật / tắt chế độ đọc tập trung.
+  if (focusBtn && readerCard) {
+    focusBtn.addEventListener('click', () => {
+      const active = readerCard.classList.toggle('focus-mode');
+
+      focusBtn.innerHTML = active
+        ? '<i class="fa-solid fa-xmark"></i><span>Thoát chế độ tập trung</span>'
+        : '<i class="fa-solid fa-book-open"></i><span>Chế độ đọc tập trung</span>';
+    });
+  }
+
+  // Tăng cỡ chữ.
   if (fontPlusBtn) {
     fontPlusBtn.addEventListener('click', () => {
       if (currentFontSize < 24) {
@@ -310,6 +336,7 @@ function initArticleReader() {
     });
   }
 
+  // Giảm cỡ chữ.
   if (fontMinusBtn) {
     fontMinusBtn.addEventListener('click', () => {
       if (currentFontSize > 13) {
@@ -319,27 +346,37 @@ function initArticleReader() {
     });
   }
 
+  // Gửi bình luận.
   if (commentForm) {
     commentForm.addEventListener('submit', (e) => {
       e.preventDefault();
+
       const input = document.getElementById('comment-input');
       const authorInput = document.getElementById('comment-author-input');
       const content = input ? input.value.trim() : '';
-      const author = authorInput && authorInput.value.trim() ? authorInput.value.trim() : 'Bạn đọc ẩn danh';
+      const author = authorInput && authorInput.value.trim()
+        ? authorInput.value.trim()
+        : 'Bạn đọc ẩn danh';
 
       if (!content) return;
 
       const commentsList = document.getElementById('modal-comments-list');
+
       if (commentsList) {
         const commentEl = document.createElement('div');
         commentEl.className = 'comment-card';
+
         commentEl.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="comment-author"><i class="fa-solid fa-user-circle" style="color: var(--accent-crimson); margin-right: 0.35rem;"></i>${author}</span>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Vừa xong</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="comment-author">
+              <i class="fa-solid fa-user-circle" style="color:var(--accent-crimson);margin-right:.35rem;"></i>
+              ${author}
+            </span>
+            <span style="font-size:.75rem;color:var(--text-muted);">Vừa xong</span>
           </div>
           <p class="comment-text">${content}</p>
         `;
+
         commentsList.prepend(commentEl);
       }
 
@@ -351,15 +388,25 @@ function initArticleReader() {
 
 function updateArticleFontSize() {
   const bodyText = document.querySelector('.article-content-text');
+
   if (bodyText) {
     bodyText.style.fontSize = `${currentFontSize}px`;
   }
 }
-
 function openReaderModal(article) {
   currentArticleData = article;
+
   const modal = document.getElementById('reader-modal');
   if (!modal) return;
+
+  // Reset chế độ đọc tập trung khi mở bài viết mới.
+  const readerCard = modal.querySelector('.reader-modal-card');
+  if (readerCard) readerCard.classList.remove('focus-mode');
+
+  const focusBtn = document.getElementById('focus-mode-btn');
+  if (focusBtn) {
+    focusBtn.innerHTML = '<i class="fa-solid fa-book-open"></i><span>Chế độ đọc tập trung</span>';
+  }
 
   document.getElementById('modal-cat-tag').textContent = article.category || 'Tin Tiêu Điểm';
   document.getElementById('modal-title').textContent = article.title;
@@ -369,6 +416,7 @@ function openReaderModal(article) {
   document.getElementById('modal-read-time').textContent = article.readTime || '4 phút đọc';
 
   const modalImg = document.getElementById('modal-image');
+
   if (modalImg && article.image) {
     modalImg.src = article.image;
     modalImg.style.display = 'block';
@@ -377,23 +425,32 @@ function openReaderModal(article) {
   }
 
   const modalCaption = document.getElementById('modal-caption');
+
   if (modalCaption) {
     modalCaption.textContent = article.imageCaption || article.title;
   }
 
   const modalBody = document.getElementById('modal-body-content');
+
   if (modalBody) {
-    modalBody.innerHTML = article.content || `<p>${article.sapo}</p><p>Nội dung chi tiết đang được các phóng viên chiến trường tiếp tục cập nhật theo diễn biến mới nhất của sự kiện...</p>`;
+    modalBody.innerHTML = article.content || `
+      <p>${article.sapo}</p>
+      <p>Nội dung chi tiết đang được các phóng viên chiến trường tiếp tục cập nhật theo diễn biến mới nhất của sự kiện...</p>
+    `;
   }
 
-  // Comments
+  // Hiển thị bình luận.
   const commentsList = document.getElementById('modal-comments-list');
+
   if (commentsList) {
     if (article.comments && article.comments.length) {
       commentsList.innerHTML = article.comments.map(c => `
         <div class="comment-card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="comment-author"><i class="fa-solid fa-user-circle" style="color: var(--accent-crimson); margin-right: 0.35rem;"></i>${c.user}</span>
+            <span class="comment-author">
+              <i class="fa-solid fa-user-circle" style="color: var(--accent-crimson); margin-right: 0.35rem;"></i>
+              ${c.user}
+            </span>
             <span style="font-size: 0.75rem; color: var(--text-muted);">${c.time}</span>
           </div>
           <p class="comment-text">${c.text}</p>
@@ -403,7 +460,10 @@ function openReaderModal(article) {
       commentsList.innerHTML = `
         <div class="comment-card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span class="comment-author"><i class="fa-solid fa-user-circle" style="color: var(--accent-crimson); margin-right: 0.35rem;"></i>Nguyễn Văn An</span>
+            <span class="comment-author">
+              <i class="fa-solid fa-user-circle" style="color: var(--accent-crimson); margin-right: 0.35rem;"></i>
+              Nguyễn Văn An
+            </span>
             <span style="font-size: 0.75rem; color: var(--text-muted);">25 phút trước</span>
           </div>
           <p class="comment-text">Thông tin rất hữu ích và mang tính thời sự cao. Cảm ơn tòa soạn đã đưa tin nhanh chóng!</p>
@@ -412,17 +472,22 @@ function openReaderModal(article) {
     }
   }
 
+  // Mở modal.
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 function openReaderModalById(id) {
-  // Find in mock database
   let article = null;
-  if (NEWS_DATA.mainHero.id === id) article = NEWS_DATA.mainHero;
-  else if (NEWS_DATA.eMagazine.id === id) article = NEWS_DATA.eMagazine;
-  else article = NEWS_DATA.subHeroes.find(a => a.id === id) || 
-                 NEWS_DATA.businessNews.find(a => a.id === id);
+
+  if (NEWS_DATA.mainHero.id === id) {
+    article = NEWS_DATA.mainHero;
+  } else if (NEWS_DATA.eMagazine.id === id) {
+    article = NEWS_DATA.eMagazine;
+  } else {
+    article = NEWS_DATA.subHeroes.find(a => a.id === id) ||
+              NEWS_DATA.businessNews.find(a => a.id === id);
+  }
 
   if (!article) {
     article = {
@@ -441,30 +506,50 @@ function openReaderModalById(id) {
 
 function closeReaderModal() {
   const modal = document.getElementById('reader-modal');
-  if (modal) {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
+  if (!modal) return;
+
+  modal.classList.remove('active');
+
+  const readerCard = modal.querySelector('.reader-modal-card');
+
+  if (readerCard) {
+    readerCard.classList.remove('focus-mode');
   }
+
+  const focusBtn = document.getElementById('focus-mode-btn');
+
+  if (focusBtn) {
+    focusBtn.innerHTML = `
+      <i class="fa-solid fa-book-open"></i>
+      <span>Chế độ đọc tập trung</span>
+    `;
+  }
+
+  document.body.style.overflow = '';
 }
 
-// Quick modal TTS trigger
+// Đọc bài viết bằng giọng nói.
 function playModalTTS() {
   if (!('speechSynthesis' in window)) {
     showToast('Trình duyệt không hỗ trợ phát giọng nói');
     return;
   }
+
   window.speechSynthesis.cancel();
+
   const title = document.getElementById('modal-title').textContent;
   const sapo = document.getElementById('modal-sapo').textContent;
+
   const utterance = new SpeechSynthesisUtterance(`${title}. ${sapo}`);
   utterance.lang = 'vi-VN';
   utterance.rate = 1.0;
+
   window.speechSynthesis.speak(utterance);
   showToast('Đang đọc to bài viết qua giọng AI...');
 }
 
 /* ==========================================================================
-   7. Interactive Poll Widget (Thăm Dò Ý Kiến Độc Giả)
+   7. Interactive Poll Widget
    ========================================================================== */
 function initPollWidget() {
   const pollContainer = document.getElementById('poll-widget');
@@ -479,14 +564,17 @@ function initPollWidget() {
         showToast('Bạn đã tham gia biểu quyết cho khảo sát này!');
         return;
       }
+
       hasVoted = true;
 
-      // Update votes
-      const votes = [64, 26, 10]; // Simulated percentages
+      const votes = [64, 26, 10];
+
       buttons.forEach((b, idx) => {
         const bar = b.querySelector('.poll-bar');
         const percentSpan = b.querySelector('.poll-percent');
+
         if (bar) bar.style.width = `${votes[idx]}%`;
+
         if (percentSpan) {
           percentSpan.textContent = `${votes[idx]}%`;
           percentSpan.style.display = 'inline';
@@ -497,7 +585,6 @@ function initPollWidget() {
     });
   });
 }
-
 /* ==========================================================================
    8. Newsletter Subscription (Đăng Ký Nhận Bản Tin)
    ========================================================================== */
@@ -535,8 +622,8 @@ function initSearch() {
         NEWS_DATA.eMagazine
       ];
 
-      const matched = allNews.find(item => 
-        item.title.toLowerCase().includes(keyword) || 
+      const matched = allNews.find(item =>
+        item.title.toLowerCase().includes(keyword) ||
         (item.sapo && item.sapo.toLowerCase().includes(keyword))
       );
 
@@ -559,6 +646,13 @@ function initCategoryNavigation() {
     item.addEventListener('click', (e) => {
       navItems.forEach(n => n.classList.remove('active'));
       item.classList.add('active');
+      const label = item.textContent.trim();
+      const category = rssCategoryMap[label];
+      if (category) {
+        e.preventDefault();
+        rssCategory = category;
+        loadRssFeed(false);
+      }
     });
   });
 }
@@ -578,7 +672,7 @@ function showToast(message) {
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--accent-crimson);"></i> ${message}`;
-  
+
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -587,4 +681,75 @@ function showToast(message) {
     toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
   }, 3200);
+}
+
+/* ==========================================================================
+   12. Hàm gọi thời tiết
+   ========================================================================== */
+//vị trí mặc định
+const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM'}
+
+function initWeather() {
+  if (!navigator.geolocation) {
+    //nếu trình duyệt không hỗ trợ định vị => gọi tới vị trí mặc định
+    loadWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.city);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      //lấy pos.coords.latitude và pos.coords.longitude rồi gọi loadWeather
+      loadWeather(pos.coords.latitude, pos.coords.longitude, 'Vị trí của bạn');
+    },
+    () => {
+      //người dùng từ chối => gọi vị trí mặc định
+      loadWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.city);
+    },
+    { timeout: 8000 }
+  );
+}
+
+async function loadWeather(lat, lon, city) {
+  //ghép URL có lat, lon
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+              `&current=temperature_2m,weather_code&timezone=auto`;
+
+  try {
+    //gọi API
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('HTTP' + response.status);
+    const data = await response.json();
+
+    //lấy dữ liệu thời tiết
+    const temp = data.current.temperature_2m;
+    const code = data.current.weather_code;
+
+    console.log('Thời tiết: ', city, temp, code); //kiểm tra trong log xem lấy được local và temp chưa
+    renderWeather(city, temp, code);
+
+  } catch (error) {
+    //báo lỗi
+    console.error('Weather failed: ', error);
+    document.getElementById('weather-desc').textContent = 'Không tải được';
+  }
+}
+
+function getWeatherIcon(code) {
+  if (code === 0) return { text: 'Trời quang', icon: 'fa-sun'};
+  if (code <= 3) return { text: 'Có mây', icon: 'fa-cloud-sun'};
+  if (code === 45 || code === 48) return { text: 'Sương mù', icon: 'fa-smog'};
+  if (code >= 51 && code <= 57 ) return { text: 'Mưa phùn', icon: 'fa-cloud-rain'};
+  if ( (code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { text: 'Mưa', icon: 'fa-cloud-showers-heavy'};
+  if ( code >= 95 && code <= 99 ) return { text: 'Mưa dông', icon: 'fa-cloud-bolt'};
+
+  return { text: 'Không rõ', icon: 'fa-cloud' };
+}
+
+function renderWeather(city, temp, code) {
+  const info = getWeatherIcon(code);
+
+  document.getElementById('weather-city').textContent = city;
+  document.getElementById('weather-temp').textContent = Math.round(temp) + '°C';
+  document.getElementById('weather-desc').textContent = info.text;
+  document.getElementById('weather-icon').className = 'fa-solid ' + info.icon
 }
