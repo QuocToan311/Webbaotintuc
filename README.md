@@ -69,6 +69,8 @@ Trang web báo tin tức điện tử hiện đại, tối ưu SEO, hỗ trợ �
    http://localhost:3000
    ```
 
+> Yêu cầu Node.js 18+ để sử dụng `fetch` và `AbortController` trên server. Nếu nguồn RSS tạm thời không phản hồi, giao diện tự động chuyển sang dữ liệu mẫu trong `js/data.js`.
+
 ### 📡 Danh Sách API Endpoints Cung Cấp
 * **Lấy danh sách tin RSS:**
   `GET http://localhost:3000/api/rss?source=vnexpress&category=home`
@@ -77,6 +79,8 @@ Trang web báo tin tức điện tử hiện đại, tối ưu SEO, hỗ trợ �
   `GET http://localhost:3000/api/article?url=https://vnexpress.net/...`
 * **Danh sách nguồn báo & chuyên mục:**
   `GET http://localhost:3000/api/sources`
+
+Server hiện dùng cache trong bộ nhớ 5 phút cho mỗi nguồn/chuyên mục. Thêm `refresh=1` vào URL `/api/rss` để bỏ qua cache. Khi mở một bài RSS, giao diện gọi `/api/article` để lấy nội dung toàn văn và loại bỏ script, style, tracking cùng các thẻ HTML không an toàn trước khi hiển thị.
 
 ---
 
