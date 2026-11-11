@@ -81,18 +81,3 @@ Trang web báo tin tức điện tử hiện đại, tối ưu SEO, hỗ trợ �
   `GET http://localhost:3000/api/sources`
 
 Server hiện dùng cache trong bộ nhớ 5 phút cho mỗi nguồn/chuyên mục. Thêm `refresh=1` vào URL `/api/rss` để bỏ qua cache. Khi mở một bài RSS, giao diện gọi `/api/article` để lấy nội dung toàn văn và loại bỏ script, style, tracking cùng các thẻ HTML không an toàn trước khi hiển thị.
-
----
-
-## 📁 Cấu Trúc Mã Nguồn
-
-```
-Web_bao_tin_tuc/
-├── index.html            # Khung sườn HTML5 chuẩn SEO (Containers động, Skeleton Shimmer, Progress Bar)
-├── server.js             # Máy chủ Node.js (RSS Ingestion, XML Parser, TTL Cache, Web Crawler)
-├── css/
-   └── style.css         # Hệ thống thiết kế (Tokens, Dark/Light, Layout, Animations, Load More)
-├── js/
-   ├── data.js           # Dữ liệu dự phòng siêu nhẹ (Offline fallback)
-   └── app.js            # Core App (State Management, Data Binding, Crawler, Bookmarks, Audio, Search)
-```

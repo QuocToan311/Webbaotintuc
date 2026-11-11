@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="vi" data-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VNEWS 24H - Báo Điện Tử Tri Thức & Công Nghệ Số Hàng Đầu</title>
 
   <!-- SEO & Meta Tags -->
-  <meta name="description" content="Kênh thông tin thời sự, kinh tế, công nghệ AI, năng lượng xanh và phong cách sống uy tín, cập nhật liên tục 24/7 với trải nghiệm đa phương tiện cao cấp.">
-  <meta name="keywords" content="tin tức, thời sự, công nghệ, trí tuệ nhân tạo, kinh doanh, chứng khoán, thể thao, e-magazine, báo điện tử">
+  <meta name="description"
+    content="Kênh thông tin thời sự, kinh tế, công nghệ AI, năng lượng xanh và phong cách sống uy tín, cập nhật liên tục 24/7 với trải nghiệm đa phương tiện cao cấp.">
+  <meta name="keywords"
+    content="tin tức, thời sự, công nghệ, trí tuệ nhân tạo, kinh doanh, chứng khoán, thể thao, e-magazine, báo điện tử">
   <meta name="author" content="Ban Biên Tập VNEWS 24H">
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://vnews24h.vn/">
   <meta property="og:title" content="VNEWS 24H - Tin tức Đa chiều, Chính xác và Kịp thời">
-  <meta property="og:description" content="Trải nghiệm đọc báo chuẩn mực với tin tức dòng sự kiện, đọc báo bằng giọng nói AI và các chuyên đề phóng sự đặc sắc.">
-  <meta property="og:image" content="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80">
+  <meta property="og:description"
+    content="Trải nghiệm đọc báo chuẩn mực với tin tức dòng sự kiện, đọc báo bằng giọng nói AI và các chuyên đề phóng sự đặc sắc.">
+  <meta property="og:image" content="assets/images/hero.jpg">
   <!-- Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
@@ -35,6 +39,7 @@
   }
   </script>
 </head>
+
 <body>
 
   <!-- ======================================================================
@@ -52,7 +57,8 @@
 
         <div class="weather-badge" id="weather-badge">
           <i id="weather-icon" class="fa-solid fa-spinner fa-spin"></i>
-          <span><span id="weather-city">Đang Tải</span>: <strong id="weather-temp">--°C</strong>, <span id="weather-desc">...</span></span>
+          <span><span id="weather-city">Đang Tải</span>: <strong id="weather-temp">--°C</strong>, <span
+              id="weather-desc">...</span></span>
         </div>
 
         <div class="market-ticker">
@@ -104,7 +110,8 @@
         <a href="#" class="logo-link">
           <div class="brand-title">
             <span>VNEWS</span><span class="accent-red">24H</span>
-            <span style="font-size: 1.1rem; vertical-align: top; color: var(--accent-crimson);"><i class="fa-solid fa-bolt"></i></span>
+            <span style="font-size: 1.1rem; vertical-align: top; color: var(--accent-crimson);"><i
+                class="fa-solid fa-bolt"></i></span>
           </div>
           <div class="brand-slogan">Báo Điện Tử Tri Thức & Công Nghệ Số Quốc Gia</div>
         </a>
@@ -114,15 +121,23 @@
       <div class="masthead-center">
         <div class="search-bar-quick">
           <span class="search-icon-btn"><i class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="quick-search-input" class="search-input" placeholder="Tìm kiếm tin tức, chủ đề nóng, chuyên gia... (Nhấn Enter)">
+          <input type="text" id="quick-search-input" class="search-input"
+            placeholder="Tìm kiếm tin tức, chủ đề nóng, chuyên gia... (Nhấn Enter)">
         </div>
+      </div>
+
+      <!-- Network Offline Alert -->
+      <div id="network-offline-pill" style="display: none; align-items: center; gap: 0.45rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.8125rem; font-weight: 700; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; margin-right: 1rem;">
+        <i class="fa-solid fa-wifi" style="text-decoration: line-through;"></i>
+        <span>Đang ngoại tuyến</span>
       </div>
 
       <!-- Hotline & Editorial Info -->
       <div class="masthead-ad">
         <span class="ad-tag">Hotline 24/7</span>
         <div class="ad-text">
-          <i class="fa-solid fa-phone-volume" style="color: var(--accent-crimson); margin-right: 0.3rem;"></i> <strong>1900 6868</strong> • Đường dây nóng Tòa soạn
+          <i class="fa-solid fa-phone-volume" style="color: var(--accent-crimson); margin-right: 0.3rem;"></i>
+          <strong>1900 6868</strong> • Đường dây nóng Tòa soạn
         </div>
       </div>
     </div>
@@ -140,7 +155,8 @@
         <li class="nav-item"><a href="#section-news">Công nghệ AI</a></li>
         <li class="nav-item"><a href="#section-news">Năng lượng Xanh</a></li>
         <li class="nav-item"><a href="#section-news">Thể thao</a></li>
-        <li class="nav-item"><a href="#section-emagazine" class="special"><i class="fa-solid fa-crown" style="color: var(--accent-gold);"></i> E-Magazine</a></li>
+        <li class="nav-item"><a href="#section-emagazine" class="special"><i class="fa-solid fa-crown"
+              style="color: var(--accent-gold);"></i> E-Magazine</a></li>
         <li class="nav-item"><a href="#section-opinions">Góc nhìn</a></li>
         <li class="nav-item"><a href="#section-opinions">Văn hóa & Đời sống</a></li>
       </ul>
@@ -172,7 +188,8 @@
 
       <div class="ticker-controls">
         <button id="ticker-prev" class="ticker-btn" title="Tin trước"><i class="fa-solid fa-chevron-left"></i></button>
-        <button id="ticker-next" class="ticker-btn" title="Tin tiếp theo"><i class="fa-solid fa-chevron-right"></i></button>
+        <button id="ticker-next" class="ticker-btn" title="Tin tiếp theo"><i
+            class="fa-solid fa-chevron-right"></i></button>
       </div>
     </div>
   </section>
@@ -208,6 +225,7 @@
         </div>
       </div>
     </section>
+
     <!-- ====================================================================
          5. HERO SECTION: 3-Column Editorial Grid
          ==================================================================== -->
@@ -220,7 +238,7 @@
           <article class="sub-hero-card" onclick="openReaderModalById('sub-01')">
             <div class="card-media">
               <span class="category-tag blue">Kinh Doanh</span>
-              <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80" alt="Thị trường tài chính chứng khoán" loading="lazy">
+              <img src="assets/images/business.jpg" alt="Thị trường tài chính chứng khoán" loading="lazy">
             </div>
             <div class="card-body">
               <h3 class="card-title">Phố Wall và Thị trường Châu Á Đồng Loạt Khởi Sắc Sau Tín Hiệu Lãi Suất Mới</h3>
@@ -235,10 +253,11 @@
           <article class="sub-hero-card" onclick="openReaderModalById('sub-02')">
             <div class="card-media">
               <span class="category-tag gold">Năng Lượng Xanh</span>
-              <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&auto=format&fit=crop&q=80" alt="Dự án năng lượng gió và mặt trời" loading="lazy">
+              <img src="assets/images/green_tech.jpg" alt="Dự án năng lượng gió và mặt trời" loading="lazy">
             </div>
             <div class="card-body">
-              <h3 class="card-title">Đại Dự Án Điện Gió Ngoài Khơi Hòa Lưới Điện Quốc Gia: Bước Tiến Vượt Bậc Về Net-Zero</h3>
+              <h3 class="card-title">Đại Dự Án Điện Gió Ngoài Khơi Hòa Lưới Điện Quốc Gia: Bước Tiến Vượt Bậc Về
+                Net-Zero</h3>
               <div class="card-meta">
                 <span class="time-read"><i class="fa-regular fa-clock"></i> 14:20</span>
                 <span><i class="fa-regular fa-eye"></i> 18.7K</span>
@@ -252,21 +271,26 @@
           <article class="main-hero-card">
             <div class="main-hero-media" onclick="openReaderModalById('hero-01')">
               <span class="hero-overlay-badge"><i class="fa-solid fa-fire"></i> TIÊU ĐIỂM TOÀN CẦU</span>
-              <img src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80" alt="Hội nghị Thượng đỉnh Trí tuệ Nhân tạo Toàn cầu 2026">
+              <img src="assets/images/hero.jpg" alt="Hội nghị Thượng đỉnh Trí tuệ Nhân tạo Toàn cầu 2026">
             </div>
 
             <div class="main-hero-content">
               <h2 class="main-hero-title" onclick="openReaderModalById('hero-01')">
-                Khai mạc Hội nghị Thượng đỉnh AI Toàn cầu 2026: Định hình Kỷ nguyên Siêu Trí tuệ và Chuẩn mực Đạo đức Mới
+                Khai mạc Hội nghị Thượng đỉnh AI Toàn cầu 2026: Định hình Kỷ nguyên Siêu Trí tuệ và Chuẩn mực Đạo đức
+                Mới
               </h2>
-              
+
               <p class="main-hero-sapo">
-                Hơn 5.000 chuyên gia công nghệ, các nhà khoa học hàng đầu và đại diện từ 60 quốc gia đã hội tụ để thống nhất bộ khung pháp lý quốc tế đầu tiên về kiểm soát rủi ro AI và mở rộng ứng dụng trí tuệ nhân tạo trong y tế, năng lượng sạch.
+                Hơn 5.000 chuyên gia công nghệ, các nhà khoa học hàng đầu và đại diện từ 60 quốc gia đã hội tụ để thống
+                nhất bộ khung pháp lý quốc tế đầu tiên về kiểm soát rủi ro AI và mở rộng ứng dụng trí tuệ nhân tạo trong
+                y tế, năng lượng sạch.
               </p>
 
               <div class="hero-actions-row">
                 <div class="author-info">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="TS. Nguyễn Minh Triết" class="author-avatar">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                    alt="TS. Nguyễn Minh Triết" class="author-avatar">
                   <div>
                     <div class="author-name">TS. Nguyễn Minh Triết</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">16:15 Hôm nay • 5 phút đọc</div>
@@ -289,15 +313,18 @@
         <!-- Column 3: Live Feed by Minute (Phải) -->
         <div class="feed-hero-col">
           <div class="feed-header">
-            <span class="feed-title"><i class="fa-solid fa-bolt" style="color: var(--accent-crimson);"></i> Tin Mới 24/7</span>
-            <span class="live-indicator"><span class="pulse-dot" style="background: var(--accent-green);"></span> LIVE</span>
+            <span class="feed-title"><i class="fa-solid fa-bolt" style="color: var(--accent-crimson);"></i> Tin Mới
+              24/7</span>
+            <span class="live-indicator"><span class="pulse-dot" style="background: var(--accent-green);"></span>
+              LIVE</span>
           </div>
 
           <div class="feed-list" id="feed-list-container">
             <!-- Feed Items rendered dynamically -->
             <div class="feed-item" onclick="openReaderModalById('feed-1')">
               <span class="feed-item-time">16:45</span>
-              <p class="feed-item-title">Bộ Giao thông Vận tải thông tin tiến độ dự án đường sắt tốc độ cao Bắc - Nam</p>
+              <p class="feed-item-title">Bộ Giao thông Vận tải thông tin tiến độ dự án đường sắt tốc độ cao Bắc - Nam
+              </p>
             </div>
             <div class="feed-item" onclick="openReaderModalById('feed-2')">
               <span class="feed-item-time">16:30</span>
@@ -336,7 +363,8 @@
         <!-- Category Section: Kinh Doanh & Công Nghệ -->
         <div class="section-wrapper" style="margin-top: 0;">
           <div class="section-head">
-            <h2 class="section-title"><i class="fa-solid fa-chart-line" style="color: var(--accent-blue);"></i> Kinh Doanh & Đổi Mới</h2>
+            <h2 class="section-title"><i class="fa-solid fa-chart-line" style="color: var(--accent-blue);"></i> Kinh
+              Doanh & Đổi Mới</h2>
             <div class="section-tags">
               <button class="sub-tag-btn active">Tất cả</button>
               <button class="sub-tag-btn">Tài chính</button>
@@ -350,15 +378,18 @@
             <article class="news-card" onclick="openReaderModalById('biz-01')">
               <div class="card-media">
                 <span class="category-tag blue">Tài Chính Số</span>
-                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80" alt="Giao dịch không tiền mặt" loading="lazy">
+                <img src="assets/images/business.jpg" alt="Giao dịch không tiền mặt" loading="lazy">
               </div>
               <button class="load-more-btn" id="rss-load-more-btn" type="button">Xem thêm tin tức</button>
               <div class="card-body">
-                <h3 class="card-title">Chuyển Đổi Số Trong Ngành Ngân Hàng: Khi Thanh Toán Không Chạm Trở Thành Lựa Chọn Thống Trị</h3>
-                <p class="card-sapo">Tỷ lệ giao dịch trực tuyến qua mã QR và ví điện tử đạt mức kỷ lục 82%, định hình lại hành vi chi tiêu.</p>
+                <h3 class="card-title">Chuyển Đổi Số Trong Ngành Ngân Hàng: Khi Thanh Toán Không Chạm Trở Thành Lựa Chọn
+                  Thống Trị</h3>
+                <p class="card-sapo">Tỷ lệ giao dịch trực tuyến qua mã QR và ví điện tử đạt mức kỷ lục 82%, định hình
+                  lại hành vi chi tiêu.</p>
                 <div class="card-meta">
                   <span>13:45 • Nguyễn Văn Hưng</span>
-                  <span><i class="fa-regular fa-bookmark" onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[0]);"></i></span>
+                  <span><i class="fa-regular fa-bookmark"
+                      onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[0]);"></i></span>
                 </div>
               </div>
             </article>
@@ -367,14 +398,17 @@
             <article class="news-card" onclick="openReaderModalById('biz-02')">
               <div class="card-media">
                 <span class="category-tag gold">Công Nghệ Xanh</span>
-                <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&auto=format&fit=crop&q=80" alt="Pin xe điện thế hệ mới" loading="lazy">
+                <img src="assets/images/green_tech.jpg" alt="Pin xe điện thế hệ mới" loading="lazy">
               </div>
               <div class="card-body">
-                <h3 class="card-title">Pin Thế Hệ Mới Đột Phá: Sạc Đầy Xe Điện Chỉ Trong 10 Phút Với Độ Bền 1 Triệu Km</h3>
-                <p class="card-sapo">Công nghệ pin thể rắn vừa được thương mại hóa thành công, giải quyết triệt để nỗi lo sạc pin.</p>
+                <h3 class="card-title">Pin Thế Hệ Mới Đột Phá: Sạc Đầy Xe Điện Chỉ Trong 10 Phút Với Độ Bền 1 Triệu Km
+                </h3>
+                <p class="card-sapo">Công nghệ pin thể rắn vừa được thương mại hóa thành công, giải quyết triệt để nỗi
+                  lo sạc pin.</p>
                 <div class="card-meta">
                   <span>12:10 • Trịnh Thùy Linh</span>
-                  <span><i class="fa-regular fa-bookmark" onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[1]);"></i></span>
+                  <span><i class="fa-regular fa-bookmark"
+                      onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[1]);"></i></span>
                 </div>
               </div>
             </article>
@@ -383,14 +417,17 @@
             <article class="news-card" onclick="openReaderModalById('biz-03')">
               <div class="card-media">
                 <span class="category-tag red">Thể Thao</span>
-                <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80" alt="Khoảnh khắc chiến thắng bóng đá" loading="lazy">
+                <img src="assets/images/sports.jpg" alt="Khoảnh khắc chiến thắng bóng đá" loading="lazy">
               </div>
               <div class="card-body">
-                <h3 class="card-title">Bàn Thắng Vàng Phút Bù Giờ Thứ 94 Đưa Đội Tuyển Vào Lịch Sử Vòng Loại Thế Giới</h3>
-                <p class="card-sapo">Màn lội ngược dòng ngoạn mục đầy cảm xúc làm nức lòng hàng triệu người hâm mộ sau 120 phút nghẹt thở.</p>
+                <h3 class="card-title">Bàn Thắng Vàng Phút Bù Giờ Thứ 94 Đưa Đội Tuyển Vào Lịch Sử Vòng Loại Thế Giới
+                </h3>
+                <p class="card-sapo">Màn lội ngược dòng ngoạn mục đầy cảm xúc làm nức lòng hàng triệu người hâm mộ sau
+                  120 phút nghẹt thở.</p>
                 <div class="card-meta">
                   <span>11:30 • Vũ Hải Đăng</span>
-                  <span><i class="fa-regular fa-bookmark" onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[2]);"></i></span>
+                  <span><i class="fa-regular fa-bookmark"
+                      onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[2]);"></i></span>
                 </div>
               </div>
             </article>
@@ -401,17 +438,20 @@
              7. E-MAGAZINE / SPECIAL STORY SHOWCASE
              ================================================================ -->
         <section class="emagazine-feature" id="section-emagazine" onclick="openReaderModalById('emag-01')">
-          <img src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1600&auto=format&fit=crop&q=80" alt="Không gian văn hóa cà phê Hà Nội" class="emagazine-bg" loading="lazy">
+          <img src="assets/images/lifestyle.jpg" alt="Không gian văn hóa cà phê Hà Nội" class="emagazine-bg"
+            loading="lazy">
           <div class="emagazine-overlay"></div>
-          
+
           <div class="emagazine-content">
             <span class="special-badge"><i class="fa-solid fa-award"></i> E-MAGAZINE ĐẶC BIỆT #42</span>
             <h2 class="emagazine-title">Cà Phê Hà Nội: Nhịp Sống Chậm Rãi Giữa Kỷ Nguyên Số Hóa Tốc Độ Cao</h2>
             <p class="emagazine-sapo">
-              Giữa những tòa cao ốc bằng kính và tiếng thông báo không ngừng của điện thoại thông minh, những quán cà phê góc phố cổ vẫn giữ trọn linh hồn của sự kết nối chân thật giữa người với người.
+              Giữa những tòa cao ốc bằng kính và tiếng thông báo không ngừng của điện thoại thông minh, những quán cà
+              phê góc phố cổ vẫn giữ trọn linh hồn của sự kết nối chân thật giữa người với người.
             </p>
             <div style="display: flex; align-items: center; gap: 1.5rem; font-size: 0.875rem;">
-              <span><i class="fa-solid fa-feather-pointed" style="color: var(--accent-gold);"></i> Ký sự: Chu Đình Ngạn</span>
+              <span><i class="fa-solid fa-feather-pointed" style="color: var(--accent-gold);"></i> Ký sự: Chu Đình
+                Ngạn</span>
               <span><i class="fa-regular fa-clock"></i> 8 phút trải nghiệm</span>
               <button class="btn-read-now" style="background: var(--accent-gold); color: black;">
                 Khám phá ngay <i class="fa-solid fa-arrow-right"></i>
@@ -425,16 +465,19 @@
              ================================================================ -->
         <div class="section-wrapper" id="section-opinions">
           <div class="section-head">
-            <h2 class="section-title"><i class="fa-solid fa-quote-left" style="color: var(--accent-crimson);"></i> Góc Nhìn & Đối Thoại</h2>
+            <h2 class="section-title"><i class="fa-solid fa-quote-left" style="color: var(--accent-crimson);"></i> Góc
+              Nhìn & Đối Thoại</h2>
             <span style="font-size: 0.875rem; color: var(--text-muted);">Diễn đàn ý kiến chuyên gia đa chiều</span>
           </div>
 
           <div class="opinion-grid">
             <!-- Opinion 1 -->
             <div class="opinion-card">
-              <p class="opinion-quote">"Đừng sợ AI cướp đi công việc của bạn, hãy lo ngại nếu bản thân từ chối học cách làm việc cùng với AI mỗi ngày."</p>
+              <p class="opinion-quote">"Đừng sợ AI cướp đi công việc của bạn, hãy lo ngại nếu bản thân từ chối học cách
+                làm việc cùng với AI mỗi ngày."</p>
               <div class="opinion-author">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="GS. Đặng Minh Tuấn" class="opinion-avatar">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+                  alt="GS. Đặng Minh Tuấn" class="opinion-avatar">
                 <div>
                   <div class="opinion-author-name">GS. Đặng Minh Tuấn</div>
                   <div class="opinion-author-title">Viện trưởng Viện Nghiên cứu Đổi mới Sáng tạo</div>
@@ -444,9 +487,11 @@
 
             <!-- Opinion 2 -->
             <div class="opinion-card">
-              <p class="opinion-quote">"Năng lượng xanh không còn là trách nhiệm xã hội đơn thuần, đó là tấm vé thông hành bắt buộc để hàng hóa Việt bước ra biển lớn."</p>
+              <p class="opinion-quote">"Năng lượng xanh không còn là trách nhiệm xã hội đơn thuần, đó là tấm vé thông
+                hành bắt buộc để hàng hóa Việt bước ra biển lớn."</p>
               <div class="opinion-author">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80" alt="Bà Phạm Thanh Hà" class="opinion-avatar">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
+                  alt="Bà Phạm Thanh Hà" class="opinion-avatar">
                 <div>
                   <div class="opinion-author-name">Bà Phạm Thanh Hà</div>
                   <div class="opinion-author-title">Chuyên gia Kinh tế & Phát triển Bền vững</div>
@@ -465,13 +510,16 @@
 
         <!-- Widget 1: Top 5 Đọc Nhiều Nhất -->
         <div class="sidebar-widget">
-          <h3 class="widget-title"><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent-crimson);"></i> Đọc Nhiều Nhất 24H</h3>
+          <h3 class="widget-title"><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent-crimson);"></i>
+            Đọc Nhiều Nhất 24H</h3>
           <div class="trending-list">
             <div class="trending-item" onclick="openReaderModalById('top-1')">
               <span class="rank-number">01</span>
               <div>
-                <h4 class="trending-title">Lễ hội trình diễn ánh sáng bằng 2.026 drone thắp sáng bầu trời hồ Tây cuối tuần này</h4>
-                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 82K lượt đọc</span>
+                <h4 class="trending-title">Lễ hội trình diễn ánh sáng bằng 2.026 drone thắp sáng bầu trời hồ Tây cuối
+                  tuần này</h4>
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 82K lượt
+                  đọc</span>
               </div>
             </div>
 
@@ -479,15 +527,18 @@
               <span class="rank-number">02</span>
               <div>
                 <h4 class="trending-title">Hội nghị Thượng đỉnh AI 2026: Đột phá lớn nhất về chuẩn an toàn quốc tế</h4>
-                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 65K lượt đọc</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 65K lượt
+                  đọc</span>
               </div>
             </div>
 
             <div class="trending-item" onclick="openReaderModalById('top-3')">
               <span class="rank-number">03</span>
               <div>
-                <h4 class="trending-title">Giá vàng SJC biến động mạnh: Khuyến nghị quan trọng cho nhà đầu tư cá nhân</h4>
-                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 53K lượt đọc</span>
+                <h4 class="trending-title">Giá vàng SJC biến động mạnh: Khuyến nghị quan trọng cho nhà đầu tư cá nhân
+                </h4>
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 53K lượt
+                  đọc</span>
               </div>
             </div>
 
@@ -495,7 +546,8 @@
               <span class="rank-number">04</span>
               <div>
                 <h4 class="trending-title">Đường sắt cao tốc 350 km/h: Hành trình đưa kinh tế cất cánh</h4>
-                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 41K lượt đọc</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 41K lượt
+                  đọc</span>
               </div>
             </div>
 
@@ -503,7 +555,8 @@
               <span class="rank-number">05</span>
               <div>
                 <h4 class="trending-title">Top 10 quán cà phê đẹp tĩnh lặng thích hợp làm việc tại Hà Nội và TP.HCM</h4>
-                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 38K lượt đọc</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-eye"></i> 38K lượt
+                  đọc</span>
               </div>
             </div>
           </div>
@@ -511,7 +564,8 @@
 
         <!-- Widget 2: Bảng Giá Thị Trường -->
         <div class="sidebar-widget">
-          <h3 class="widget-title"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> Nhịp Đập Thị Trường</h3>
+          <h3 class="widget-title"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> Nhịp Đập Thị
+            Trường</h3>
           <table class="market-table">
             <thead>
               <tr>
@@ -552,8 +606,10 @@
 
         <!-- Widget 3: Thăm Dò Dư Luận (Interactive Poll) -->
         <div class="sidebar-widget" id="poll-widget">
-          <h3 class="widget-title"><i class="fa-solid fa-square-poll-vertical" style="color: var(--accent-gold);"></i> Khảo Sát Độc Giả</h3>
-          <p class="poll-question">Theo bạn, công nghệ nào sẽ tạo ra bước ngoặt kinh tế lớn nhất cho Việt Nam trong năm 2026?</p>
+          <h3 class="widget-title"><i class="fa-solid fa-square-poll-vertical" style="color: var(--accent-gold);"></i>
+            Khảo Sát Độc Giả</h3>
+          <p class="poll-question">Theo bạn, công nghệ nào sẽ tạo ra bước ngoặt kinh tế lớn nhất cho Việt Nam trong năm
+            2026?</p>
           <div class="poll-options">
             <button class="poll-btn">
               <div class="poll-bar"></div>
@@ -601,7 +657,8 @@
           <span>VNEWS</span><span class="accent-red">24H</span>
         </div>
         <p>
-          Báo Điện Tử Tri Thức & Công Nghệ Số Quốc Gia. Cơ quan ngôn luận chuyên sâu về kinh tế số, đổi mới sáng tạo và chuyển đổi xanh. Cập nhật thông tin nhanh, khách quan và chuẩn mực.
+          Báo Điện Tử Tri Thức & Công Nghệ Số Quốc Gia. Cơ quan ngôn luận chuyên sâu về kinh tế số, đổi mới sáng tạo và
+          chuyển đổi xanh. Cập nhật thông tin nhanh, khách quan và chuẩn mực.
         </p>
         <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.5rem;">
           Giấy phép hoạt động báo chí điện tử số 311/GP-BTTTT do Bộ Thông tin và Truyền thông cấp.
@@ -622,7 +679,8 @@
       <div class="footer-col">
         <h5>Dịch Vụ Độc Giả</h5>
         <ul class="footer-links">
-          <li><a href="#" onclick="document.getElementById('audio-play-toggle').click(); return false;">Bản tin Báo nói AI</a></li>
+          <li><a href="#" onclick="document.getElementById('audio-play-toggle').click(); return false;">Bản tin Báo nói
+              AI</a></li>
           <li><a href="#" onclick="openBookmarksDrawer(); return false;">Danh sách đọc sau</a></li>
           <li><a href="#">RSS Feed Tin tức</a></li>
           <li><a href="#">Tải ứng dụng Mobile</a></li>
@@ -633,10 +691,14 @@
       <div class="footer-col">
         <h5>Liên Hệ Tòa Soạn</h5>
         <ul class="footer-links">
-          <li><i class="fa-solid fa-location-dot" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> Tầng 12, Tháp Báo Chí, Hà Nội</li>
-          <li><i class="fa-solid fa-envelope" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> toasoan@vnews24h.vn</li>
-          <li><i class="fa-solid fa-phone" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> Hotline: 1900 6868</li>
-          <li><i class="fa-solid fa-handshake" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> Quảng cáo: quangcao@vnews24h.vn</li>
+          <li><i class="fa-solid fa-location-dot" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> Tầng
+            12, Tháp Báo Chí, Hà Nội</li>
+          <li><i class="fa-solid fa-envelope" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i>
+            toasoan@vnews24h.vn</li>
+          <li><i class="fa-solid fa-phone" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> Hotline:
+            1900 6868</li>
+          <li><i class="fa-solid fa-handshake" style="margin-right: 0.35rem; color: var(--accent-crimson);"></i> Quảng
+            cáo: quangcao@vnews24h.vn</li>
         </ul>
       </div>
     </div>
@@ -656,47 +718,54 @@
        ====================================================================== -->
   <div class="modal-backdrop" id="reader-modal">
     <div class="reader-modal-card">
-      
+
       <!-- Toolbar -->
-        <!-- Toolbar -->
-        <div class="modal-header-toolbar">
-            <div class="modal-tools">
-
-                <!-- Nút nghe AI đọc -->
-                <button class="tts-btn" onclick="playModalTTS()">
-                    <i class="fa-solid fa-volume-high"></i>
-                    <span>Nghe AI đọc</span>
-                </button>
-
-                <!-- NÚT CHẾ ĐỘ ĐỌC TẬP TRUNG -->
-                <button class="focus-mode-btn" id="focus-mode-btn" type="button">
-                    <i class="fa-solid fa-book-open"></i>
-                    <span>Chế độ đọc tập trung</span>
-                </button>
-
-                <!-- Điều chỉnh cỡ chữ -->
-                <button class="font-size-btn" id="font-minus-btn" title="Giảm cỡ chữ">A-</button>
-                <button class="font-size-btn" id="font-plus-btn" title="Tăng cỡ chữ">A+</button>
-
-                <!-- Chia sẻ -->
-                <button class="font-size-btn" onclick="showToast('Đã sao chép liên kết bài viết vào clipboard!')" title="Chia sẻ">
-                    <i class="fa-solid fa-share-nodes"></i>
-                </button>
-
-            </div>
-
-            <button class="modal-close-btn" id="modal-close-btn" title="Đóng cửa sổ">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+      <div class="modal-header-toolbar">
+        <div class="modal-tools">
+          <button class="tts-btn" onclick="playModalTTS()">
+            <i class="fa-solid fa-volume-high"></i> <span>Nghe AI đọc</span>
+          </button>
+          <!-- Translation Selector -->
+          <div class="translate-dropdown-wrapper">
+            <i class="fa-solid fa-language"></i>
+            <select id="modal-translate-select" class="translate-select" title="Dịch bài viết sang ngôn ngữ khác">
+              <option value="vi" selected>🇻🇳 Tiếng Việt (Gốc)</option>
+              <option value="en">🇬🇧 English</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="zh-CN">🇨🇳 中文</option>
+              <option value="ja">🇯🇵 日本語</option>
+              <option value="ko">🇰🇷 한국어</option>
+            </select>
+          </div>
+          <!-- Download / Export PDF -->
+          <button class="action-pill-btn" id="modal-export-pdf-btn" onclick="exportArticleToPDF()" title="Tải bài viết về máy dạng PDF">
+            <i class="fa-solid fa-file-pdf"></i> <span>Xuất PDF</span>
+          </button>
+          <button class="action-pill-btn" id="modal-offline-save-btn" onclick="saveArticleOffline()" title="Lưu bài viết để đọc Offline">
+            <i class="fa-solid fa-cloud-arrow-down"></i> <span>Lưu Offline</span>
+          </button>
+          <button class="font-size-btn" id="font-minus-btn" title="Giảm cỡ chữ">A-</button>
+          <button class="font-size-btn" id="font-plus-btn" title="Tăng cỡ chữ">A+</button>
+          <button class="font-size-btn" onclick="showToast('Đã sao chép liên kết bài viết vào clipboard!')"
+            title="Chia sẻ">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
         </div>
+
+        <button class="modal-close-btn" id="modal-close-btn" title="Đóng cửa sổ">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
       <!-- Scrollable Article Content -->
       <div class="modal-body-scroll">
         <header class="article-header">
           <span class="category-badge" id="modal-cat-tag">Công nghệ</span>
           <h1 id="modal-title">Tiêu đề bài viết</h1>
-          <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.5rem;">
-            <span><i class="fa-solid fa-user-pen" style="color: var(--accent-crimson);"></i> <strong id="modal-author" style="color: var(--text-primary);">Tác giả</strong></span>
+          <div
+            style="display: flex; align-items: center; gap: 1rem; font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.5rem;">
+            <span><i class="fa-solid fa-user-pen" style="color: var(--accent-crimson);"></i> <strong id="modal-author"
+                style="color: var(--text-primary);">Tác giả</strong></span>
             <span><i class="fa-regular fa-clock"></i> <span id="modal-date">Thời gian</span></span>
             <span><i class="fa-regular fa-bookmark"></i> <span id="modal-read-time">4 phút đọc</span></span>
           </div>
@@ -721,8 +790,10 @@
           </h3>
 
           <form class="comment-input-box" id="modal-comment-form">
-            <input type="text" id="comment-author-input" class="newsletter-input" placeholder="Họ và tên của bạn..." required>
-            <textarea id="comment-input" class="comment-textarea" placeholder="Chia sẻ suy nghĩ của bạn về bài viết này..." required></textarea>
+            <input type="text" id="comment-author-input" class="newsletter-input" placeholder="Họ và tên của bạn..."
+              required>
+            <textarea id="comment-input" class="comment-textarea"
+              placeholder="Chia sẻ suy nghĩ của bạn về bài viết này..." required></textarea>
             <button type="submit" class="comment-submit-btn">Gửi bình luận</button>
           </form>
 
@@ -752,8 +823,8 @@
     </div>
   </aside>
 
-  <!-- Load JavaScript -->
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 </html>

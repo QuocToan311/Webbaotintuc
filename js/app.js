@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
   initCategoryNavigation();
   initWeather();
+  initNetworkStatusListener();
 });
 
 let rssArticles = [];
@@ -325,9 +326,10 @@ function initThemeToggle() {
 }
 
 /* ==========================================================================
-   4. Bookmarks System
+   4. Bookmarks & Offline Reading System
    ========================================================================== */
 let bookmarks = JSON.parse(localStorage.getItem('vnews-bookmarks') || '[]');
+let offlineArticles = JSON.parse(localStorage.getItem('vnews-offline-articles') || '[]');
 
 function initBookmarks() {
   const bookmarkBtn = document.getElementById('bookmark-toggle-btn');
@@ -411,10 +413,15 @@ function renderBookmarksList() {
     return;
   }
 
-  listEl.innerHTML = bookmarks.map(item => `
+  listEl.innerHTML = bookmarks.map(item => {
+    const isOffline = offlineArticles.some(off => off.id === item.id);
+    return `
     <div class="bookmark-item" style="display: flex; gap: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); align-items: center;">
       <div style="flex: 1;">
-        <span style="font-size: 0.7rem; font-weight: 700; color: var(--accent-crimson); text-transform: uppercase;">${item.category || 'Tin tức'}</span>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="font-size: 0.7rem; font-weight: 700; color: var(--accent-crimson); text-transform: uppercase;">${item.category || 'Tin tức'}</span>
+          ${isOffline ? '<span class="offline-status-badge"><i class="fa-solid fa-cloud-arrow-down"></i> Sẵn sàng đọc Offline</span>' : ''}
+        </div>
         <h5 style="font-size: 0.85rem; font-weight: 600; line-height: 1.35; margin: 0.2rem 0; cursor: pointer;" onclick="openReaderModalById('${item.id}'); closeBookmarksDrawer();">${item.title}</h5>
         <span style="font-size: 0.75rem; color: var(--text-muted);">${item.readTime || '3 phút đọc'}</span>
       </div>
@@ -422,7 +429,8 @@ function renderBookmarksList() {
         <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 /* ==========================================================================
    5. Interactive Audio Player
@@ -619,6 +627,9 @@ function openReaderModal(article) {
   currentModalLang = 'vi';
   const translateSelect = document.getElementById('modal-translate-select');
   if (translateSelect) translateSelect.value = 'vi';
+
+  // Cập nhật trạng thái nút Lưu Offline
+  updateOfflineButtonState(article.id);
 
   const modal = document.getElementById('reader-modal');
   if (!modal) return;
@@ -821,28 +832,18 @@ async function translateModalArticle(targetLang) {
 }
 
 function openReaderModalById(id) {
-  let article = null;
+  const mockArticles = [
+    NEWS_DATA.mainHero,
+    NEWS_DATA.eMagazine,
+    ...(NEWS_DATA.subHeroes || []),
+    ...(NEWS_DATA.businessNews || [])
+  ];
 
-  if (NEWS_DATA.mainHero.id === id) {
-    article = NEWS_DATA.mainHero;
-  } else if (NEWS_DATA.eMagazine.id === id) {
-    article = NEWS_DATA.eMagazine;
-  } else {
-    article = NEWS_DATA.subHeroes.find(a => a.id === id) ||
-              NEWS_DATA.businessNews.find(a => a.id === id);
-  }
-    // Tìm theo thứ tự ưu tiên: RSS đang hiển thị → bài đã lưu → dữ liệu mẫu
-    const mockArticles = [
-      NEWS_DATA.mainHero,
-      NEWS_DATA.eMagazine,
-      ...NEWS_DATA.subHeroes,
-      ...NEWS_DATA.businessNews
-    ];
-
-    let article =
-      rssArticles.find(item => item.id === id) ||
-      bookmarks.find(item => item.id === id) ||
-      mockArticles.find(item => item.id === id);
+  let article =
+    offlineArticles.find(item => item.id === id) ||
+    rssArticles.find(item => item.id === id) ||
+    bookmarks.find(item => item.id === id) ||
+    mockArticles.find(item => item.id === id);
 
   if (!article) {
     article = {
@@ -881,9 +882,6 @@ function closeReaderModal() {
   }
 
   document.body.style.overflow = '';
-}
-
-// Đọc bài viết bằng giọng nói.
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
@@ -1048,8 +1046,7 @@ function showToast(message) {
    12. Hàm gọi thời tiết
    ========================================================================== */
 //vị trí mặc định
-const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM'}
-const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM'} 
+const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM' };
 
 function initWeather() {
   if (!navigator.geolocation) {
@@ -1111,9 +1108,125 @@ function getWeatherIcon(code) {
 function renderWeather(city, temp, code) {
   const info = getWeatherIcon(code);
 
-  document.getElementById('weather-city').textContent = city;
-  document.getElementById('weather-temp').textContent = Math.round(temp) + '°C';
-  document.getElementById('weather-desc').textContent = info.text;
-  document.getElementById('weather-icon').className = 'fa-solid ' + info.icon
+  const cityEl = document.getElementById('weather-city');
+  const tempEl = document.getElementById('weather-temp');
+  const descEl = document.getElementById('weather-desc');
+  const iconEl = document.getElementById('weather-icon');
+
+  if (cityEl) cityEl.textContent = city;
+  if (tempEl) tempEl.textContent = Math.round(temp) + '°C';
+  if (descEl) descEl.textContent = info.text;
+  if (iconEl) iconEl.className = 'fa-solid ' + info.icon;
 }
-} 
+
+
+/* ==========================================================================
+   TÍNH NĂNG: XUẤT BẢN PDF & LƯU ĐỌC OFFLINE
+   ========================================================================== */
+
+function updateOfflineButtonState(articleId) {
+  const offlineBtn = document.getElementById('modal-offline-save-btn');
+  if (!offlineBtn) return;
+  const isSaved = offlineArticles.some(a => a.id === articleId);
+  if (isSaved) {
+    offlineBtn.classList.add('active');
+    offlineBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Đã lưu Offline</span>';
+    offlineBtn.title = 'Bài viết đã lưu trong bộ nhớ máy. Bấm để xóa';
+  } else {
+    offlineBtn.classList.remove('active');
+    offlineBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> <span>Lưu Offline</span>';
+    offlineBtn.title = 'Lưu toàn bộ nội dung để đọc khi không có mạng internet';
+  }
+}
+
+function saveArticleOffline() {
+  if (!currentArticleData) {
+    showToast('Chưa có bài viết được chọn');
+    return;
+  }
+
+  const articleId = currentArticleData.id;
+  const existingIndex = offlineArticles.findIndex(a => a.id === articleId);
+
+  if (existingIndex > -1) {
+    offlineArticles.splice(existingIndex, 1);
+    localStorage.setItem('vnews-offline-articles', JSON.stringify(offlineArticles));
+    updateOfflineButtonState(articleId);
+    renderBookmarksList();
+    showToast('Đã xóa bài viết khỏi bộ nhớ Offline');
+    return;
+  }
+
+  // Thu thập nội dung đầy đủ hiện tại
+  const title = document.getElementById('modal-title')?.textContent || currentArticleData.title;
+  const sapo = document.getElementById('modal-sapo')?.textContent || currentArticleData.sapo;
+  const content = document.getElementById('modal-body-content')?.innerHTML || currentArticleData.content;
+  const category = document.getElementById('modal-cat-tag')?.textContent || currentArticleData.category;
+  const authorName = document.getElementById('modal-author')?.textContent || currentArticleData.author?.name;
+  const publishedAt = document.getElementById('modal-date')?.textContent || currentArticleData.publishedAt;
+  const readTime = document.getElementById('modal-read-time')?.textContent || currentArticleData.readTime;
+  const image = currentArticleData.image || '';
+
+  const offlineItem = {
+    id: articleId,
+    title,
+    sapo,
+    content,
+    category,
+    image,
+    publishedAt,
+    readTime,
+    author: { name: authorName },
+    savedOfflineAt: new Date().toISOString()
+  };
+
+  offlineArticles.unshift(offlineItem);
+  localStorage.setItem('vnews-offline-articles', JSON.stringify(offlineArticles));
+
+  // Tự động bookmark luôn nếu chưa bookmark
+  if (!bookmarks.some(b => b.id === articleId)) {
+    bookmarks.unshift(offlineItem);
+    localStorage.setItem('vnews-bookmarks', JSON.stringify(bookmarks));
+    updateBookmarkUI();
+  }
+
+  updateOfflineButtonState(articleId);
+  renderBookmarksList();
+  showToast('Đã lưu bài viết Offline thành công! Bạn có thể đọc bài ngay cả khi mất mạng.');
+}
+
+function exportArticleToPDF() {
+  if (!currentArticleData) {
+    showToast('Không có bài viết nào đang mở');
+    return;
+  }
+
+  showToast('Đang khởi tạo bản in PDF chuẩn báo chí...');
+
+  // Sử dụng window.print() với CSS @media print đã được tối ưu hóa cho bài báo
+  setTimeout(() => {
+    window.print();
+  }, 250);
+}
+
+
+function initNetworkStatusListener() {
+  const pill = document.getElementById('network-offline-pill');
+
+  function updateStatus() {
+    if (!navigator.onLine) {
+      if (pill) pill.style.display = 'inline-flex';
+      showToast('Bạn đang ở chế độ Ngoại Tuyến (Offline). Bạn vẫn có thể đọc các bài báo đã lưu!');
+    } else {
+      if (pill) pill.style.display = 'none';
+    }
+  }
+
+  window.addEventListener('online', () => {
+    updateStatus();
+    showToast('Đã kết nối Internet trở lại!');
+  });
+  window.addEventListener('offline', updateStatus);
+
+  updateStatus();
+}
