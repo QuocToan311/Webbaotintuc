@@ -337,9 +337,6 @@ function initThemeToggle() {
 /* ==========================================================================
    4. Bookmarks & Offline Reading System
    ========================================================================== */
-let bookmarks = JSON.parse(localStorage.getItem('vnews-bookmarks') || '[]');
-let offlineArticles = JSON.parse(localStorage.getItem('vnews-offline-articles') || '[]');
-
 function initBookmarks() {
   const bookmarkBtn = document.getElementById('bookmark-toggle-btn');
   const drawer = document.getElementById('bookmarks-drawer');
@@ -347,6 +344,16 @@ function initBookmarks() {
   const drawerCloseBtn = document.getElementById('drawer-close-btn');
 
   updateBookmarkUI();
+
+  let prevState = store.getState();
+  store.subscribe(() => {
+    const state = store.getState();
+    if (state.bookmarks !== prevState.bookmarks || state.offline !== prevState.offline) {
+      updateBookmarkUI();
+      if (currentArticleData) updateOfflineButtonState(currentArticleData.id);
+    }
+    prevState = state;
+  });
 
   if (bookmarkBtn) {
     bookmarkBtn.addEventListener('click', openBookmarksDrawer);
@@ -383,31 +390,23 @@ function closeBookmarksDrawer() {
 }
 
 function toggleBookmark(article) {
-  const index = bookmarks.findIndex(item => item.id === article.id);
-
-  if (index > -1) {
-    bookmarks.splice(index, 1);
-    showToast('Đã xóa khỏi danh sách đọc sau');
-  } else {
-    bookmarks.unshift(article);
-    showToast('Đã lưu bài viết vào danh sách đọc sau');
-  }
-
-  localStorage.setItem('vnews-bookmarks', JSON.stringify(bookmarks));
-  updateBookmarkUI();
+  const wasBookmarked = selectors.isBookmarked(store.getState(), article.id);
+  store.dispatch(actions.toggleBookmark(article));
+  showToast(wasBookmarked ? 'Đã xóa khỏi danh sách đọc sau' : 'Đã lưu bài viết vào danh sách đọc sau');
 }
 
 function updateBookmarkUI() {
   const badge = document.getElementById('bookmark-count');
 
   if (badge) {
-    badge.textContent = bookmarks.length;
+    badge.textContent = store.getState().bookmarks.length;
   }
 
   renderBookmarksList();
 }
 
 function renderBookmarksList() {
+  const { bookmarks, offline: offlineArticles } = store.getState();
   const listEl = document.getElementById('bookmarks-list');
   if (!listEl) return;
 
@@ -853,6 +852,7 @@ async function translateModalArticle(targetLang) {
 }
 
 function openReaderModalById(id) {
+  const { bookmarks, offline: offlineArticles } = store.getState();
   const mockArticles = [
     NEWS_DATA.mainHero,
     NEWS_DATA.eMagazine,
@@ -1146,6 +1146,7 @@ function renderWeather(city, temp, code) {
    ========================================================================== */
 
 function updateOfflineButtonState(articleId) {
+  const offlineArticles = store.getState().offline;
   const offlineBtn = document.getElementById('modal-offline-save-btn');
   if (!offlineBtn) return;
   const isSaved = offlineArticles.some(a => a.id === articleId);
@@ -1167,52 +1168,29 @@ function saveArticleOffline() {
   }
 
   const articleId = currentArticleData.id;
-  const existingIndex = offlineArticles.findIndex(a => a.id === articleId);
 
-  if (existingIndex > -1) {
-    offlineArticles.splice(existingIndex, 1);
-    localStorage.setItem('vnews-offline-articles', JSON.stringify(offlineArticles));
-    updateOfflineButtonState(articleId);
-    renderBookmarksList();
+  if (selectors.isOffline(store.getState(), articleId)) {
+    store.dispatch(actions.removeOffline(articleId));
     showToast('Đã xóa bài viết khỏi bộ nhớ Offline');
     return;
   }
 
-  // Thu thập nội dung đầy đủ hiện tại
-  const title = document.getElementById('modal-title')?.textContent || currentArticleData.title;
-  const sapo = document.getElementById('modal-sapo')?.textContent || currentArticleData.sapo;
-  const content = document.getElementById('modal-body-content')?.innerHTML || currentArticleData.content;
-  const category = document.getElementById('modal-cat-tag')?.textContent || currentArticleData.category;
-  const authorName = document.getElementById('modal-author')?.textContent || currentArticleData.author?.name;
-  const publishedAt = document.getElementById('modal-date')?.textContent || currentArticleData.publishedAt;
-  const readTime = document.getElementById('modal-read-time')?.textContent || currentArticleData.readTime;
-  const image = currentArticleData.image || '';
-
+  //thu thập nội dung đầy đủ hiện tại
   const offlineItem = {
     id: articleId,
-    title,
-    sapo,
-    content,
-    category,
-    image,
-    publishedAt,
-    readTime,
-    author: { name: authorName },
+    title: document.getElementById('modal-title')?.textContent || currentArticleData.title,
+    sapo: document.getElementById('modal-sapo')?.textContent || currentArticleData.sapo,
+    content: document.getElementById('modal-body-content')?.innerHTML || currentArticleData.content,
+    category: document.getElementById('modal-cat-tag')?.textContent || currentArticleData.category,
+    image: currentArticleData.image || '',
+    publishedAt: document.getElementById('modal-date')?.textContent || currentArticleData.publishedAt,
+    readTime: document.getElementById('modal-read-time')?.textContent || currentArticleData.readTime,
+    author: { name: document.getElementById('modal-author')?.textContent || currentArticleData.author?.name },
     savedOfflineAt: new Date().toISOString()
   };
 
-  offlineArticles.unshift(offlineItem);
-  localStorage.setItem('vnews-offline-articles', JSON.stringify(offlineArticles));
-
-  // Tự động bookmark luôn nếu chưa bookmark
-  if (!bookmarks.some(b => b.id === articleId)) {
-    bookmarks.unshift(offlineItem);
-    localStorage.setItem('vnews-bookmarks', JSON.stringify(bookmarks));
-    updateBookmarkUI();
-  }
-
-  updateOfflineButtonState(articleId);
-  renderBookmarksList();
+  store.dispatch(actions.saveOffline(offlineItem));
+  store.dispatch(actions.addBookmark(offlineItem)); //tự bookmark nếu chưa có (reducer tự bỏ qua nếu trùng)
   showToast('Đã lưu bài viết Offline thành công! Bạn có thể đọc bài ngay cả khi mất mạng.');
 }
 
