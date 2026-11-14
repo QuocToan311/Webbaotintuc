@@ -219,10 +219,11 @@ function sanitizeArticleHtml(html, baseUrl) {
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
+    .replace(/[\s/]on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/\s(?:href|src)\s*=\s*(['"])(.*?)\1/gi, (match, quote, value) => {
       try {
         const absolute = new URL(value, base).href;
+        if (!/^https?:/i.test(absolute)) return '';
         return ` ${match.trim().split('=')[0]}=${quote}${absolute}${quote}`;
       } catch {
         return '';

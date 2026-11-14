@@ -214,6 +214,15 @@ function escapeAttribute(value = '') {
   return escapeHtml(value);
 }
 
+function safeHtml(html = '') {
+  if (!window.DOMPurify) return escapeHtml(html); // CDN lỗi thì hiện dạng chữ thường
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'h2', 'h3', 'blockquote', 'figure', 'figcaption', 'img'],
+    ALLOWED_ATTR: ['src', 'alt', 'title', 'loading']
+  });
+}
+
+
 /* ==========================================================================
    1. Live Clock & Calendar
    ========================================================================== */
@@ -413,24 +422,36 @@ function renderBookmarksList() {
     return;
   }
 
-  listEl.innerHTML = bookmarks.map(item => {
+    listEl.innerHTML = bookmarks.map(item => {
     const isOffline = offlineArticles.some(off => off.id === item.id);
     return `
     <div class="bookmark-item" style="display: flex; gap: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); align-items: center;">
       <div style="flex: 1;">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <span style="font-size: 0.7rem; font-weight: 700; color: var(--accent-crimson); text-transform: uppercase;">${item.category || 'Tin tức'}</span>
+          <span style="font-size: 0.7rem; font-weight: 700; color: var(--accent-crimson); text-transform: uppercase;">${escapeHtml(item.category || 'Tin tức')}</span>
           ${isOffline ? '<span class="offline-status-badge"><i class="fa-solid fa-cloud-arrow-down"></i> Sẵn sàng đọc Offline</span>' : ''}
         </div>
-        <h5 style="font-size: 0.85rem; font-weight: 600; line-height: 1.35; margin: 0.2rem 0; cursor: pointer;" onclick="openReaderModalById('${item.id}'); closeBookmarksDrawer();">${item.title}</h5>
-        <span style="font-size: 0.75rem; color: var(--text-muted);">${item.readTime || '3 phút đọc'}</span>
+        <h5 class="bookmark-open" data-id="${escapeAttribute(item.id)}" style="font-size: 0.85rem; font-weight: 600; line-height: 1.35; margin: 0.2rem 0; cursor: pointer;">${escapeHtml(item.title)}</h5>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(item.readTime || '3 phút đọc')}</span>
       </div>
-      <button onclick="toggleBookmark({id: '${item.id}'})" style="color: var(--text-muted); padding: 0.4rem; border-radius: 4px;" title="Xóa">
+      <button class="bookmark-remove" data-id="${escapeAttribute(item.id)}" style="color: var(--text-muted); padding: 0.4rem; border-radius: 4px;" title="Xóa">
         <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
   `;
   }).join('');
+
+  // Gán bằng "=" (không dùng addEventListener) để mỗi lần render không bị gắn trùng
+  listEl.onclick = (event) => {
+    const openEl = event.target.closest('.bookmark-open');
+    const removeEl = event.target.closest('.bookmark-remove');
+    if (openEl) {
+      openReaderModalById(openEl.dataset.id);
+      closeBookmarksDrawer();
+    } else if (removeEl) {
+      toggleBookmark({ id: removeEl.dataset.id });
+    }
+  };
 }
 /* ==========================================================================
    5. Interactive Audio Player
@@ -599,11 +620,11 @@ function initArticleReader() {
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="comment-author">
               <i class="fa-solid fa-user-circle" style="color:var(--accent-crimson);margin-right:.35rem;"></i>
-              ${author}
+              ${escapeHtml(author)}
             </span>
             <span style="font-size:.75rem;color:var(--text-muted);">Vừa xong</span>
           </div>
-          <p class="comment-text">${content}</p>
+          <p class="comment-text">${escapeHtml(content)}</p>
         `;
 
         commentsList.prepend(commentEl);
@@ -676,7 +697,7 @@ function openReaderModal(article) {
   const modalBody = document.getElementById('modal-body-content');
 
   if (modalBody) {
-    modalBody.innerHTML = article.content || `
+    modalBody.innerHTML = safeHtml(article.content) || `
       <p>${article.sapo}</p>
       <p>Nội dung chi tiết đang được các phóng viên chiến trường tiếp tục cập nhật theo diễn biến mới nhất của sự kiện...</p>
     `;
@@ -693,11 +714,11 @@ function openReaderModal(article) {
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="comment-author">
               <i class="fa-solid fa-user-circle" style="color: var(--accent-crimson); margin-right: 0.35rem;"></i>
-              ${c.user}
+              ${escapeHtml(c.user)}
             </span>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">${c.time}</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(c.time)}</span>
           </div>
-          <p class="comment-text">${c.text}</p>
+          <p class="comment-text">${escapeHtml(c.text)}</p>
         </div>
       `).join('');
     } else {
@@ -748,7 +769,7 @@ async function loadFullArticle(article) {
     const modalImg = document.getElementById('modal-image');
     if (modalTitle) modalTitle.textContent = article.title;
     if (modalSapo) modalSapo.textContent = article.sapo || '';
-    if (modalBody) modalBody.innerHTML = article.content || '<p>Bài viết chưa có nội dung toàn văn.</p>';
+    if (modalBody) modalBody.innerHTML = article.content ? safeHtml(article.content) : '<p>Bài viết chưa có nội dung toàn văn.</p>';
     if (modalImg && article.image) {
       modalImg.src = imageUrl(article.image);
       modalImg.style.display = 'block';
@@ -784,7 +805,7 @@ async function translateModalArticle(targetLang) {
   if (targetLang === 'vi') {
     if (titleEl) titleEl.textContent = currentOriginalContent.title;
     if (sapoEl) sapoEl.textContent = currentOriginalContent.sapo;
-    if (bodyEl) bodyEl.innerHTML = currentOriginalContent.content;
+    if (bodyEl) bodyEl.innerHTML = safeHtml(currentOriginalContent.content);
     showToast('Đã chuyển về bản tin tiếng Việt gốc');
     return;
   }
@@ -820,7 +841,7 @@ async function translateModalArticle(targetLang) {
     if (sapoEl) sapoEl.textContent = transSapo;
 
     if (bodyEl && transParas.length > 0) {
-      bodyEl.innerHTML = transParas.map(text => `<p>${text}</p>`).join('') + 
+      bodyEl.innerHTML = transParas.map(text => `<p>${escapeHtml(text)}</p>`).join('') + 
         `<div class="translation-indicator"><i class="fa-solid fa-circle-check"></i> Bài viết đã được dịch tự động bởi VNEWS AI Translation</div>`;
     }
 
@@ -1030,7 +1051,7 @@ function showToast(message) {
 
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--accent-crimson);"></i> ${message}`;
+  toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--accent-crimson);"></i> ${escapeHtml(message)}`;
 
   container.appendChild(toast);
 
