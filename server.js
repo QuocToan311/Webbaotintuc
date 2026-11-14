@@ -58,6 +58,52 @@ const SOURCES = {
   }
 };
 
+//hằng số kiểm tra tên miền
+const ALLOWED_ARTICLE_HOSTS = ['vnexpress.net', 'tuoitre.vn', 'thanhnien.vn', 'dantri.com.vn'];
+const MAX_HTML_BYTES = 3 * 1024 * 1024; //3mb
+const HTML_MAX_REDIRECTS = 3;
+
+//hàm kiểm tra tên miền
+function isAllowedArticleHost(hostname) {
+  const host = hostname.toLowerCase();
+  return ALLOWED_ARTICLE_HOSTS.some(domain => host === domain || host.endsWith('.' + domain));
+}
+
+async function readLimited(res, maxByte) {
+  const reader = res.body.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxByte) {
+      await reader.cancel();
+      throw new Error('Trang quá lớn');
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+//hàm giới hạn theo IP
+const TRANSLATE_LANGS = new Set(['vi', 'en', 'fr', 'zh-cn', 'ja', 'ko']);
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 phút
+const RATE_LIMIT_MAX = 40;           // tối đa 40 request/phút/IP
+const rateBuckets = new Map();
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const bucket = rateBuckets.get(ip);
+  if (!bucket || bucket.resetAt <= now) {
+    rateBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > RATE_LIMIT_MAX;
+}
+
+
 const cache = new Map();
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -120,19 +166,37 @@ function parseRss(xml, sourceName) {
   }).filter(item => item.title && item.link);
 }
 
-async function fetchText(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'VNEWS24H/1.0 RSS reader' }
-    });
-    if (!response.ok) throw new Error(`Nguồn trả về HTTP ${response.status}`);
-    return await response.text();
-  } finally {
-    clearTimeout(timer);
+async function fetchText(url, { allowHost } = {}) {
+  let current = new URL(url);
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    if (!['http:', 'https:'].includes(current.protocol)) throw new Error('URL không được hỗ trợ');
+    if (allowHost && !allowHost(current.hostname)) throw new Error('Tên miền không được phép');
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    try {
+      const response = await fetch(current.href, {
+        signal: controller.signal,
+        redirect: 'manual', // tự xử lý chuyển hướng để kiểm tra lại tên miền
+        headers: { 'User-Agent': 'VNEWS24H/1.0 RSS reader' }
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location) throw new Error('Chuyển hướng không hợp lệ');
+        current = new URL(location, current);
+        continue; // vòng lặp sau sẽ kiểm tra lại tên miền mới
+      }
+      if (!response.ok) throw new Error(`Nguồn trả về HTTP ${response.status}`);
+
+      const declared = Number(response.headers.get('content-length') || 0);
+      if (declared > MAX_HTML_BYTES) throw new Error('Trang quá lớn');
+      return await readLimited(response, MAX_HTML_BYTES);
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw new Error('Quá nhiều lần chuyển hướng');
 }
 
 async function getRss(source, category, forceRefresh = false) {
@@ -194,6 +258,13 @@ function sendJson(res, status, payload) {
 }
 
 async function handleApi(req, res, url) {
+  if (['/api/article', '/api/translate'].includes(url.pathname)) {
+    const ip = req.socket.remoteAddress || 'unknown';
+    if (isRateLimited(ip)) {
+      return sendJson(res, 429, { ok: false, error: 'Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút' });
+    }
+  }
+
   if (url.pathname === '/api/sources') {
     return sendJson(res, 200, Object.entries(SOURCES).map(([id, value]) => ({
       id, name: value.name, categories: Object.keys(value.categories)
@@ -212,8 +283,11 @@ async function handleApi(req, res, url) {
     if (!articleUrl) return sendJson(res, 400, { ok: false, error: 'Thiếu URL bài viết' });
     try {
       const parsed = new URL(articleUrl);
-      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('URL không được hỗ trợ');
-      return sendJson(res, 200, { ok: true, article: extractArticle(await fetchText(parsed.href), parsed.href) });
+      if (!['http:', 'https:'].includes(parsed.protocol) || !isAllowedArticleHost(parsed.hostname)) {
+        return sendJson(res, 400, { ok: false, error: 'Chỉ hỗ trợ bài viết từ VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí' });
+      }
+      const html = await fetchText(parsed.href, { allowHost: isAllowedArticleHost });
+      return sendJson(res, 200, { ok: true, article: extractArticle(html, parsed.href) });
     } catch (error) {
       return sendJson(res, 502, { ok: false, error: `Không thể crawl bài viết: ${error.message}` });
     }
@@ -225,6 +299,10 @@ async function handleApi(req, res, url) {
 
     if (!text.trim()) {
       return sendJson(res, 400, { ok: false, error: 'Thiếu nội dung cần dịch' });
+    }
+
+    if (!TRANSLATE_LANGS.has(targetLang) || !TRANSLATE_LANGS.has(sourceLang)) {
+      return sendJson(res, 400, { ok: false, error: 'Ngôn ngữ không được hỗ trợ' });
     }
 
     const cacheKey = 'translate:' + sourceLang + ':' + targetLang + ':' + text.slice(0, 100) + ':' + text.length;
@@ -322,6 +400,7 @@ const server = http.createServer((req, res) => {
 
 setInterval(() => {
   for (const [key, value] of cache) if (value.expiresAt <= Date.now()) cache.delete(key);
+  for (const [ip, bucket] of rateBuckets) if (bucket.resetAt <= Date.now()) rateBuckets.delete(ip);
 }, 10 * 60 * 1000).unref();
 
 server.listen(PORT, () => {
