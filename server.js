@@ -119,11 +119,35 @@ const MIME_TYPES = {
 };
 
 function decodeXml(value = '') {
+  if (!value) return '';
   let decoded = value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
-  for (let pass = 0; pass < 3; pass += 1) {
+
+  // Giải mã ký tự số (decimal: &#225;, hex: &#xe1;) - nguyên nhân gây lỗi phông chữ tiếng Việt
+  decoded = decoded.replace(/&#(\d+);/g, (match, dec) => {
+    try {
+      return String.fromCodePoint(parseInt(dec, 10));
+    } catch {
+      return match;
+    }
+  });
+
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+    try {
+      return String.fromCodePoint(parseInt(hex, 16));
+    } catch {
+      return match;
+    }
+  });
+
+  for (let pass = 0; pass < 2; pass += 1) {
     decoded = decoded
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, ' ');
   }
   return decoded;
 }
@@ -168,7 +192,7 @@ function parseRss(xml, sourceName) {
 
 async function fetchText(url, { allowHost } = {}) {
   let current = new URL(url);
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+  for (let hop = 0; hop <= HTML_MAX_REDIRECTS; hop += 1) {
     if (!['http:', 'https:'].includes(current.protocol)) throw new Error('URL không được hỗ trợ');
     if (allowHost && !allowHost(current.hostname)) throw new Error('Tên miền không được phép');
 

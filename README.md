@@ -58,7 +58,7 @@ Trang web báo tin tức điện tử hiện đại, tối ưu SEO, hỗ trợ �
 
 1. Mở cửa sổ dòng lệnh tại thư mục dự án:
    ```bash
-   cd d:\study\Web_bao_tin_tuc
+   cd d:\Webbaotintuc
    ```
 2. Chạy máy chủ tĩnh & API Server:
    ```bash
