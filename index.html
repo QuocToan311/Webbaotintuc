@@ -199,16 +199,27 @@
        ====================================================================== -->
   <main class="container">
 
-    <!-- AI Podcast / Audio Highlight Bar -->
+    <!-- AI Podcast / Audio Playlist Bar -->
     <section class="audio-highlight-bar" id="audio-highlight-bar" aria-label="Bản tin báo nói thông minh">
       <div class="audio-bar-inner">
         <div class="audio-info">
           <button class="audio-icon-pulse" id="audio-play-toggle" title="Phát hoặc tạm dừng">
-            <i class="fa-solid fa-play"></i>
+            <i class="fa-solid fa-play" id="audio-play-icon"></i>
           </button>
+          <div class="playlist-nav-btns">
+            <button class="audio-nav-btn" id="audio-prev-btn" title="Bài tin trước">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button class="audio-nav-btn" id="audio-next-btn" title="Bài tin tiếp theo">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+          </div>
           <div class="audio-meta">
-            <h4>Bản Tin Giọng Nói AI 60s: Tóm Tắt 5 Tiêu Điểm Buổi Chiều</h4>
-            <p>Phát thanh tự động bởi Trợ lý Biên tập AI VNEWS • Giọng đọc Tiếng Việt chuẩn truyền hình</p>
+            <div class="audio-meta-header">
+              <span class="playlist-badge" id="playlist-badge">Tin 1 / 5</span>
+              <h4 id="audio-track-title">Bản Tin Giọng Nói AI: Đang tải danh sách tin...</h4>
+            </div>
+            <p id="audio-track-sub">Phát liên tục các tiêu điểm nổi bật • Tự động chuyển bài</p>
           </div>
         </div>
 
@@ -221,7 +232,21 @@
             <div class="wave-bar"></div>
             <div class="wave-bar"></div>
           </div>
-          <span class="audio-duration" id="audio-time-display">00:00 / 01:00</span>
+          <span class="audio-duration" id="audio-time-display">00:00 / 00:00</span>
+          <button class="playlist-drawer-toggle" id="playlist-drawer-toggle" title="Xem danh sách phát">
+            <i class="fa-solid fa-list-ul"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dropdown danh sách phát các bài tin -->
+      <div class="playlist-dropdown" id="playlist-dropdown">
+        <div class="playlist-dropdown-header">
+          <span><i class="fa-solid fa-headphones"></i> Danh sách phát tin tức hôm nay</span>
+          <span class="playlist-hint">Nhấp vào bài để nghe ngay</span>
+        </div>
+        <div class="playlist-items" id="playlist-items-container">
+          <!-- Render tự động từ các tin RSS / tin nóng -->
         </div>
       </div>
     </section>

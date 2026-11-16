@@ -453,65 +453,230 @@ function renderBookmarksList() {
   };
 }
 /* ==========================================================================
-   5. Interactive Audio Player
+   5. Continuous Audio News Playlist (Phát Danh Sách Tin Tức Tự Động)
    ========================================================================== */
+let audioPlaylist = [];
+let currentTrackIndex = 0;
+let isPlaylistPlaying = false;
+let trackSeconds = 0;
+let trackTimerInterval = null;
+
+function buildAudioPlaylist() {
+  const playlist = [];
+
+  // Lấy các bài báo nổi bật từ RSS nếu có
+  if (rssArticles && rssArticles.length > 0) {
+    rssArticles.slice(0, 5).forEach((item, idx) => {
+      playlist.push({
+        id: item.id || `rss-track-${idx}`,
+        title: item.title,
+        sapo: item.sapo || item.description || '',
+        category: item.category || 'Tin Nổi Bật',
+        source: item.source || 'VNEWS'
+      });
+    });
+  }
+
+  // Dự phòng bằng mock data nếu RSS chưa kịp tải
+  if (playlist.length === 0 && typeof NEWS_DATA !== 'undefined') {
+    if (NEWS_DATA.mainHero) {
+      playlist.push({
+        id: NEWS_DATA.mainHero.id,
+        title: NEWS_DATA.mainHero.title,
+        sapo: NEWS_DATA.mainHero.sapo,
+        category: NEWS_DATA.mainHero.category,
+        source: 'Biên Tập'
+      });
+    }
+    (NEWS_DATA.subHeroes || []).slice(0, 4).forEach(item => {
+      playlist.push({
+        id: item.id,
+        title: item.title,
+        sapo: item.sapo,
+        category: item.category,
+        source: 'Biên Tập'
+      });
+    });
+  }
+
+  return playlist;
+}
+
 function initAudioPlayer() {
   const playBtn = document.getElementById('audio-play-toggle');
+  const prevBtn = document.getElementById('audio-prev-btn');
+  const nextBtn = document.getElementById('audio-next-btn');
+  const drawerToggle = document.getElementById('playlist-drawer-toggle');
+  const dropdown = document.getElementById('playlist-dropdown');
+
+  audioPlaylist = buildAudioPlaylist();
+  updateAudioPlayerUI();
+  renderPlaylistDropdown();
+
+  if (playBtn) {
+    playBtn.addEventListener('click', toggleAudioPlay);
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', playPrevTrack);
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', playNextTrack);
+  }
+
+  if (drawerToggle && dropdown) {
+    drawerToggle.addEventListener('click', () => {
+      const isOpen = dropdown.classList.toggle('open');
+      drawerToggle.classList.toggle('active', isOpen);
+    });
+  }
+}
+
+function updateAudioPlayerUI() {
+  if (!audioPlaylist || audioPlaylist.length === 0) {
+    audioPlaylist = buildAudioPlaylist();
+  }
+  const track = audioPlaylist[currentTrackIndex];
+  if (!track) return;
+
+  const titleEl = document.getElementById('audio-track-title');
+  const subEl = document.getElementById('audio-track-sub');
+  const badgeEl = document.getElementById('playlist-badge');
+
+  if (titleEl) titleEl.textContent = track.title;
+  if (subEl) subEl.textContent = `${track.category} • ${track.source} • Tự động chuyển bài tiếp theo`;
+  if (badgeEl) badgeEl.textContent = `Tin ${currentTrackIndex + 1} / ${audioPlaylist.length}`;
+
+  renderPlaylistDropdown();
+}
+
+function renderPlaylistDropdown() {
+  const container = document.getElementById('playlist-items-container');
+  if (!container || !audioPlaylist || audioPlaylist.length === 0) return;
+
+  container.innerHTML = audioPlaylist.map((item, idx) => `
+    <div class="playlist-track-row ${idx === currentTrackIndex ? 'active' : ''}" onclick="selectTrackAndPlay(${idx})">
+      <div class="playlist-track-left">
+        <span class="playlist-track-idx">0${idx + 1}</span>
+        <span class="playlist-track-name">${item.title}</span>
+      </div>
+      <i class="fa-solid fa-volume-high playlist-track-playing-icon"></i>
+    </div>
+  `).join('');
+}
+
+function selectTrackAndPlay(idx) {
+  if (idx < 0 || idx >= audioPlaylist.length) return;
+  currentTrackIndex = idx;
+  playCurrentTrack();
+}
+
+function playNextTrack() {
+  if (!audioPlaylist || audioPlaylist.length === 0) return;
+  if (currentTrackIndex < audioPlaylist.length - 1) {
+    currentTrackIndex++;
+  } else {
+    currentTrackIndex = 0; // lặp lại từ đầu
+  }
+  playCurrentTrack();
+}
+
+function playPrevTrack() {
+  if (!audioPlaylist || audioPlaylist.length === 0) return;
+  if (currentTrackIndex > 0) {
+    currentTrackIndex--;
+  } else {
+    currentTrackIndex = audioPlaylist.length - 1;
+  }
+  playCurrentTrack();
+}
+
+function toggleAudioPlay() {
+  if (isPlaylistPlaying) {
+    pauseAudio();
+  } else {
+    playCurrentTrack();
+  }
+}
+
+function playCurrentTrack() {
+  if (!('speechSynthesis' in window)) {
+    showToast('Trình duyệt không hỗ trợ phát giọng nói');
+    return;
+  }
+
+  if (!audioPlaylist || audioPlaylist.length === 0) {
+    audioPlaylist = buildAudioPlaylist();
+  }
+
+  const track = audioPlaylist[currentTrackIndex];
+  if (!track) return;
+
+  window.speechSynthesis.cancel();
+  clearInterval(trackTimerInterval);
+
+  isPlaylistPlaying = true;
+  trackSeconds = 0;
+
   const container = document.getElementById('audio-highlight-bar');
+  const playIcon = document.getElementById('audio-play-icon');
   const timeDisplay = document.getElementById('audio-time-display');
-  if (!playBtn) return;
 
-  let isPlaying = false;
-  let seconds = 0;
-  let timerInterval = null;
+  if (container) container.classList.add('audio-playing');
+  if (playIcon) playIcon.className = 'fa-solid fa-pause';
 
-  playBtn.addEventListener('click', () => {
-    isPlaying = !isPlaying;
+  updateAudioPlayerUI();
 
-    if (isPlaying) {
-      if (container) container.classList.add('audio-playing');
-      playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-      showToast('Đang phát bản tin tóm tắt 60s...');
+  // Nội dung đọc: Giới thiệu tiêu đề và phần tóm tắt
+  const textToRead = `Tin số ${currentTrackIndex + 1}: ${track.title}. ${track.sapo}`;
+  const utterance = new SpeechSynthesisUtterance(textToRead);
+  utterance.lang = 'vi-VN';
+  utterance.rate = 1.0;
 
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-
-        const textToRead = "Đây là bản tin âm thanh nhanh của Thời Báo 24 Giờ. Hôm nay, Hội nghị Thượng đỉnh Trí tuệ Nhân tạo Toàn cầu 2026 chính thức khai mạc. Thị trường chứng khoán thăng hoa vượt mốc 1.288 điểm.";
-
-        const utterance = new SpeechSynthesisUtterance(textToRead);
-        utterance.lang = 'vi-VN';
-        utterance.rate = 1.0;
-        utterance.onend = () => stopAudio();
-
-        window.speechSynthesis.speak(utterance);
-      }
-
-      timerInterval = setInterval(() => {
-        seconds++;
-        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const secs = (seconds % 60).toString().padStart(2, '0');
-
-        if (timeDisplay) timeDisplay.textContent = `${mins}:${secs} / 01:00`;
-
-        if (seconds >= 60) stopAudio();
-      }, 1000);
+  // Khi đọc xong bài này: tự động chuyển sang bài tiếp theo
+  utterance.onend = () => {
+    if (currentTrackIndex < audioPlaylist.length - 1) {
+      showToast(`Chuyển sang bài tiếp theo (${currentTrackIndex + 2}/${audioPlaylist.length})...`);
+      currentTrackIndex++;
+      playCurrentTrack();
     } else {
-      stopAudio();
+      showToast('Đã phát xong toàn bộ danh sách tin tức!');
+      pauseAudio();
+      currentTrackIndex = 0;
+      updateAudioPlayerUI();
     }
-  });
+  };
 
-  function stopAudio() {
-    isPlaying = false;
-    if (container) container.classList.remove('audio-playing');
-    seconds = 0;
-    if (timeDisplay) timeDisplay.textContent = '00:00 / 01:00'; 
-    container.classList.remove('audio-playing');
-    playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-    clearInterval(timerInterval);
+  utterance.onerror = (e) => {
+    console.warn('Speech error:', e);
+    pauseAudio();
+  };
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+  window.speechSynthesis.speak(utterance);
+  showToast(`Đang phát bài ${currentTrackIndex + 1}/${audioPlaylist.length}: ${track.title.slice(0, 40)}...`);
+
+  trackTimerInterval = setInterval(() => {
+    trackSeconds++;
+    const mins = Math.floor(trackSeconds / 60).toString().padStart(2, '0');
+    const secs = (trackSeconds % 60).toString().padStart(2, '0');
+    if (timeDisplay) timeDisplay.textContent = `${mins}:${secs} / Auto`;
+  }, 1000);
+}
+
+function pauseAudio() {
+  isPlaylistPlaying = false;
+  const container = document.getElementById('audio-highlight-bar');
+  const playIcon = document.getElementById('audio-play-icon');
+  const timeDisplay = document.getElementById('audio-time-display');
+
+  if (container) container.classList.remove('audio-playing');
+  if (playIcon) playIcon.className = 'fa-solid fa-play';
+  if (timeDisplay) timeDisplay.textContent = '00:00 / 00:00';
+
+  clearInterval(trackTimerInterval);
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
   }
 }
 
