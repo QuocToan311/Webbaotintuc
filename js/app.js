@@ -75,6 +75,10 @@ async function loadRssFeed(forceRefresh) {
     rssVisibleCount = 6;
     NEWS_DATA.breakingNews = rssArticles.slice(0, 8).map(item => item.title);
     renderRssNews();
+    // Đồng bộ lại danh sách phát với toàn bộ các tin tức mới tải về
+    if (typeof refreshAudioPlaylist === 'function') {
+      refreshAudioPlaylist();
+    }
     showToast(`Đã cập nhật ${rssArticles.length} tin từ ${result.source}`);
   } catch (error) {
     if (error.name !== 'AbortError') {
@@ -464,42 +468,55 @@ let trackTimerInterval = null;
 function buildAudioPlaylist() {
   const playlist = [];
 
-  // Lấy các bài báo nổi bật từ RSS nếu có
+  // 1. Thu thập tối đa 15-20 tin mới nhất từ RSS hiện tại
   if (rssArticles && rssArticles.length > 0) {
-    rssArticles.slice(0, 5).forEach((item, idx) => {
-      playlist.push({
-        id: item.id || `rss-track-${idx}`,
-        title: item.title,
-        sapo: item.sapo || item.description || '',
-        category: item.category || 'Tin Nổi Bật',
-        source: item.source || 'VNEWS'
-      });
+    rssArticles.slice(0, 15).forEach((item, idx) => {
+      if (item && item.title) {
+        playlist.push({
+          id: item.id || `rss-track-${idx}`,
+          title: item.title,
+          sapo: item.sapo || item.description || '',
+          category: item.category || 'Tin Tức',
+          source: item.source || 'VNEWS'
+        });
+      }
     });
   }
 
-  // Dự phòng bằng mock data nếu RSS chưa kịp tải
-  if (playlist.length === 0 && typeof NEWS_DATA !== 'undefined') {
-    if (NEWS_DATA.mainHero) {
-      playlist.push({
-        id: NEWS_DATA.mainHero.id,
-        title: NEWS_DATA.mainHero.title,
-        sapo: NEWS_DATA.mainHero.sapo,
-        category: NEWS_DATA.mainHero.category,
-        source: 'Biên Tập'
-      });
-    }
-    (NEWS_DATA.subHeroes || []).slice(0, 4).forEach(item => {
-      playlist.push({
-        id: item.id,
-        title: item.title,
-        sapo: item.sapo,
-        category: item.category,
-        source: 'Biên Tập'
-      });
+  // 2. Bổ sung thêm tin tiêu điểm từ NEWS_DATA nếu danh sách còn ít
+  if (typeof NEWS_DATA !== 'undefined') {
+    const allMock = [
+      NEWS_DATA.mainHero,
+      NEWS_DATA.eMagazine,
+      ...(NEWS_DATA.subHeroes || []),
+      ...(NEWS_DATA.businessNews || [])
+    ].filter(Boolean);
+
+    allMock.forEach(item => {
+      if (item && item.title && !playlist.some(p => p.id === item.id)) {
+        playlist.push({
+          id: item.id,
+          title: item.title,
+          sapo: item.sapo || '',
+          category: item.category || 'Tiêu Điểm',
+          source: 'Biên Tập VNEWS'
+        });
+      }
     });
   }
 
   return playlist;
+}
+
+function refreshAudioPlaylist() {
+  const wasPlaying = isPlaylistPlaying;
+  audioPlaylist = buildAudioPlaylist();
+  // Giữ nguyên track hiện tại nếu hợp lệ
+  if (currentTrackIndex >= audioPlaylist.length) {
+    currentTrackIndex = 0;
+  }
+  updateAudioPlayerUI();
+  renderPlaylistDropdown();
 }
 
 function initAudioPlayer() {
@@ -634,17 +651,23 @@ function playCurrentTrack() {
   utterance.lang = 'vi-VN';
   utterance.rate = 1.0;
 
-  // Khi đọc xong bài này: tự động chuyển sang bài tiếp theo
+  // Khi đọc xong bài này: tự động chuyển sang bài tiếp theo và lặp lại vòng lặp
   utterance.onend = () => {
     if (currentTrackIndex < audioPlaylist.length - 1) {
-      showToast(`Chuyển sang bài tiếp theo (${currentTrackIndex + 2}/${audioPlaylist.length})...`);
       currentTrackIndex++;
+      showToast(`Đang chuyển sang bài tiếp theo (${currentTrackIndex + 1}/${audioPlaylist.length})...`);
       playCurrentTrack();
     } else {
-      showToast('Đã phát xong toàn bộ danh sách tin tức!');
-      pauseAudio();
+      // Khi đã nghe hết danh sách: Tự động quay lại bài đầu tiên và tiếp tục phát
+      showToast('Đã hết danh sách tin, tự động phát lại từ đầu bài mới nhất...');
       currentTrackIndex = 0;
-      updateAudioPlayerUI();
+      // Thử làm mới RSS feed ngầm để lấy thêm tin mới
+      if (typeof loadRssFeed === 'function') {
+        loadRssFeed(true).catch(() => {});
+      }
+      setTimeout(() => {
+        playCurrentTrack();
+      }, 1000);
     }
   };
 
