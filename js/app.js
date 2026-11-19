@@ -3,6 +3,7 @@
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
+  initRssIntegration();
   initClockAndDate();
   initTicker();
   initThemeToggle();
@@ -13,7 +14,204 @@ document.addEventListener('DOMContentLoaded', () => {
   initArticleReader();
   initSearch();
   initCategoryNavigation();
+  initWeather();
 });
+
+let rssArticles = [];
+let rssVisibleCount = 6;
+let rssSource = 'vnexpress';
+let rssCategory = 'home';
+let rssRequestController = null;
+
+const rssCategoryMap = {
+  'Thời sự': 'thoisu',
+  'Kinh doanh': 'kinhdoanh',
+  'Công nghệ AI': 'congnghe',
+  'Thể thao': 'thethao',
+  'Văn hóa & Đời sống': 'doisong'
+};
+
+function initRssIntegration() {
+  const sourceSelect = document.getElementById('rss-source-select');
+  const refreshBtn = document.getElementById('rss-refresh-btn');
+  const loadMoreBtn = document.getElementById('rss-load-more-btn');
+
+  if (sourceSelect) {
+    sourceSelect.addEventListener('change', () => {
+      rssSource = sourceSelect.value;
+      loadRssFeed(true);
+    });
+  }
+  if (refreshBtn) refreshBtn.addEventListener('click', () => loadRssFeed(true));
+  if (loadMoreBtn) loadMoreBtn.addEventListener('click', () => {
+    rssVisibleCount += 6;
+    renderRssNews();
+  });
+
+  loadRssFeed(false);
+  setInterval(() => loadRssFeed(false), 5 * 60 * 1000);
+}
+
+async function loadRssFeed(forceRefresh) {
+  const refreshBtn = document.getElementById('rss-refresh-btn');
+  if (rssRequestController) rssRequestController.abort();
+  rssRequestController = new AbortController();
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add('is-loading');
+  }
+
+  try {
+    const query = new URLSearchParams({
+      source: rssSource,
+      category: rssCategory,
+      ...(forceRefresh ? { refresh: '1' } : {})
+    });
+    const response = await fetch(`/api/rss?${query}`, { signal: rssRequestController.signal });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Không thể tải RSS');
+    rssArticles = result.items.map(normalizeRssArticle);
+    rssVisibleCount = 6;
+    NEWS_DATA.breakingNews = rssArticles.slice(0, 8).map(item => item.title);
+    renderRssNews();
+    showToast(`Đã cập nhật ${rssArticles.length} tin từ ${result.source}`);
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      rssArticles = getFallbackArticles();
+      rssVisibleCount = 6;
+      renderRssNews();
+      showToast(`RSS tạm thời không khả dụng, đang dùng dữ liệu mẫu`);
+      console.error('RSS loading failed:', error);
+    }
+  } finally {
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove('is-loading');
+    }
+  }
+}
+
+function normalizeRssArticle(item) {
+  return {
+    ...item,
+    image: decodeXmlEntities(item.image || ''),
+    category: item.category || 'Tin tức',
+    publishedAt: item.publishedAt ? new Date(item.publishedAt).toLocaleString('vi-VN') : 'Mới cập nhật',
+    readTime: '3 phút đọc',
+    author: { name: item.source || 'Nguồn RSS' }
+  };
+}
+
+function getFallbackArticles() {
+  return [NEWS_DATA.mainHero, ...NEWS_DATA.subHeroes, ...NEWS_DATA.businessNews].map(item => ({
+    ...item,
+    link: item.link || '',
+    source: 'Dữ liệu mẫu'
+  }));
+}
+
+function renderRssNews() {
+  const visible = rssArticles.slice(0, rssVisibleCount);
+  if (!visible.length) return;
+
+  const hero = visible[0];
+  const subHeroes = visible.slice(1, 3);
+  const feed = visible.slice(3, 9);
+  const heroImg = document.querySelector('.main-hero-media img');
+  const heroTitle = document.querySelector('.main-hero-title');
+  const heroSapo = document.querySelector('.main-hero-sapo');
+  if (heroImg && hero.image) heroImg.src = imageUrl(hero.image);
+  if (heroTitle) {
+    heroTitle.textContent = hero.title;
+    heroTitle.onclick = () => openReaderModal(hero);
+  }
+  if (heroSapo) heroSapo.textContent = hero.sapo || '';
+  const heroMedia = document.querySelector('.main-hero-media');
+  if (heroMedia) heroMedia.onclick = () => openReaderModal(hero);
+  const subContainer = document.querySelector('.sub-hero-col');
+  if (subContainer) {
+    subContainer.innerHTML = subHeroes.map(article => `
+      <article class="sub-hero-card" data-rss-id="${escapeAttribute(article.id)}">
+        <div class="card-media">
+          <span class="category-tag blue">${escapeHtml(article.category)}</span>
+          <img src="${escapeAttribute(imageUrl(article.image || fallbackImage(article)))}" alt="${escapeAttribute(article.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80'">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">${escapeHtml(article.title)}</h3>
+          <div class="card-meta"><span class="time-read"><i class="fa-regular fa-clock"></i> ${escapeHtml(article.publishedAt)}</span><span>${escapeHtml(article.source || '')}</span></div>
+        </div>
+      </article>
+    `).join('');
+    subContainer.querySelectorAll('[data-rss-id]').forEach(card => card.addEventListener('click', () => openReaderModal(findRssArticle(card.dataset.rssId))));
+  }
+  const feedContainer = document.getElementById('feed-list-container');
+  if (feedContainer) {
+    feedContainer.innerHTML = feed.map(article => `
+      <div class="feed-item" data-rss-id="${escapeAttribute(article.id)}">
+        <span class="feed-item-time">${escapeHtml(article.publishedAt)}</span>
+        <p class="feed-item-title">${escapeHtml(article.title)}</p>
+      </div>
+    `).join('');
+    feedContainer.querySelectorAll('[data-rss-id]').forEach(item => item.addEventListener('click', () => openReaderModal(findRssArticle(item.dataset.rssId))));
+  }
+  const grid = document.getElementById('rss-news-grid');
+  if (grid) {
+    grid.innerHTML = visible.map(article => `
+      <article class="news-card" data-rss-id="${escapeAttribute(article.id)}">
+        <div class="card-media"><span class="category-tag blue">${escapeHtml(article.category)}</span><img src="${escapeAttribute(imageUrl(article.image || fallbackImage(article)))}" alt="${escapeAttribute(article.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80'"></div>
+        <div class="card-body"><h3 class="card-title">${escapeHtml(article.title)}</h3><p class="card-sapo">${escapeHtml(article.sapo || '')}</p><div class="card-meta"><span>${escapeHtml(article.publishedAt)}</span><span>${escapeHtml(article.source || '')}</span></div></div>
+      </article>
+    `).join('');
+    grid.querySelectorAll('[data-rss-id]').forEach(card => card.addEventListener('click', () => openReaderModal(findRssArticle(card.dataset.rssId))));
+  }
+  const loadMoreBtn = document.getElementById('rss-load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.hidden = rssVisibleCount >= rssArticles.length;
+    loadMoreBtn.textContent = `Xem thêm tin tức (${Math.max(rssArticles.length - rssVisibleCount, 0)})`;
+  }
+}
+
+function findRssArticle(id) {
+  return rssArticles.find(article => article.id === id) || getFallbackArticles().find(article => article.id === id) || rssArticles[0];
+}
+
+function fallbackImage(article) {
+  const cat = (article?.category || '').toLowerCase();
+  if (cat.includes('kinh') || cat.includes('tài')) {
+    return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('công') || cat.includes('khoa') || cat.includes('ai')) {
+    return 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&auto=format&fit=crop&q=80';
+  }
+  if (cat.includes('thao')) {
+    return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80';
+}
+
+function imageUrl(url) {
+  if (!url) return '';
+  try {
+    const parsed = new URL(decodeXmlEntities(url), window.location.href);
+    return parsed.hostname.endsWith('vnecdn.net')
+      ? `/api/image?url=${encodeURIComponent(parsed.href)}`
+      : parsed.href;
+  } catch {
+    return '';
+  }
+}
+
+function decodeXmlEntities(value) {
+  return String(value).replace(/&amp;/g, '&');
+}
+
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+function escapeAttribute(value = '') {
+  return escapeHtml(value);
+}
 
 /* ==========================================================================
    1. Live Clock & Calendar
@@ -277,6 +475,9 @@ function initAudioPlayer() {
   function stopAudio() {
     isPlaying = false;
     if (container) container.classList.remove('audio-playing');
+    seconds = 0;
+    if (timeDisplay) timeDisplay.textContent = '00:00 / 01:00'; 
+    container.classList.remove('audio-playing');
     playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     clearInterval(timerInterval);
 
@@ -288,9 +489,21 @@ function initAudioPlayer() {
 
 /* ==========================================================================
    6. Reader Modal
+   6. Reader Modal (Chế Độ Đọc Bài Báo Chi Tiết & Bình Luận & Dịch Thuật)
    ========================================================================== */
 let currentArticleData = null;
+let currentOriginalContent = null;
+let currentModalLang = 'vi';
 let currentFontSize = 17;
+
+const LANG_TTS_MAP = {
+  'vi': 'vi-VN',
+  'en': 'en-US',
+  'fr': 'fr-FR',
+  'zh-CN': 'zh-CN',
+  'ja': 'ja-JP',
+  'ko': 'ko-KR'
+};
 
 function initArticleReader() {
   const modal = document.getElementById('reader-modal');
@@ -304,6 +517,7 @@ function initArticleReader() {
   if (closeBtn) {
     closeBtn.addEventListener('click', closeReaderModal);
   }
+  const translateSelect = document.getElementById('modal-translate-select');
 
   if (modal) {
     modal.addEventListener('click', (e) => {
@@ -327,6 +541,13 @@ function initArticleReader() {
   }
 
   // Tăng cỡ chữ.
+  if (translateSelect) {
+    translateSelect.addEventListener('change', async (e) => {
+      const targetLang = e.target.value;
+      await translateModalArticle(targetLang);
+    });
+  }
+
   if (fontPlusBtn) {
     fontPlusBtn.addEventListener('click', () => {
       if (currentFontSize < 24) {
@@ -395,6 +616,9 @@ function updateArticleFontSize() {
 }
 function openReaderModal(article) {
   currentArticleData = article;
+  currentModalLang = 'vi';
+  const translateSelect = document.getElementById('modal-translate-select');
+  if (translateSelect) translateSelect.value = 'vi';
 
   const modal = document.getElementById('reader-modal');
   if (!modal) return;
@@ -407,6 +631,14 @@ function openReaderModal(article) {
   if (focusBtn) {
     focusBtn.innerHTML = '<i class="fa-solid fa-book-open"></i><span>Chế độ đọc tập trung</span>';
   }
+  const defaultContent = article.content || `<p>${article.sapo || ''}</p><p>Nội dung chi tiết đang được các phóng viên tiếp tục cập nhật...</p>`;
+
+  // Lưu trữ bản gốc để có thể hoàn nguyên tức thì khi chuyển về tiếng Việt
+  currentOriginalContent = {
+    title: article.title || '',
+    sapo: article.sapo || '',
+    content: defaultContent
+  };
 
   document.getElementById('modal-cat-tag').textContent = article.category || 'Tin Tiêu Điểm';
   document.getElementById('modal-title').textContent = article.title;
@@ -418,7 +650,7 @@ function openReaderModal(article) {
   const modalImg = document.getElementById('modal-image');
 
   if (modalImg && article.image) {
-    modalImg.src = article.image;
+    modalImg.src = imageUrl(article.image);
     modalImg.style.display = 'block';
   } else if (modalImg) {
     modalImg.style.display = 'none';
@@ -437,6 +669,7 @@ function openReaderModal(article) {
       <p>${article.sapo}</p>
       <p>Nội dung chi tiết đang được các phóng viên chiến trường tiếp tục cập nhật theo diễn biến mới nhất của sự kiện...</p>
     `;
+    modalBody.innerHTML = defaultContent;
   }
 
   // Hiển thị bình luận.
@@ -475,6 +708,116 @@ function openReaderModal(article) {
   // Mở modal.
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
+
+  if (article.link && !article.content) {
+    const modalBody = document.getElementById('modal-body-content');
+    if (modalBody) modalBody.innerHTML = '<p>Đang tải toàn văn bài viết...</p>';
+    loadFullArticle(article);
+  }
+}
+
+async function loadFullArticle(article) {
+  try {
+    const response = await fetch(`/api/article?url=${encodeURIComponent(article.link)}`);
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Không thể lấy toàn văn');
+    Object.assign(article, result.article);
+    if (currentArticleData !== article) return;
+
+    // Cập nhật lại bản gốc sau khi tải được bài đầy đủ
+    currentOriginalContent = {
+      title: article.title,
+      sapo: article.sapo || '',
+      content: article.content || '<p>Bài viết chưa có nội dung toàn văn.</p>'
+    };
+
+    const modalTitle = document.getElementById('modal-title');
+    const modalSapo = document.getElementById('modal-sapo');
+    const modalBody = document.getElementById('modal-body-content');
+    const modalImg = document.getElementById('modal-image');
+    if (modalTitle) modalTitle.textContent = article.title;
+    if (modalSapo) modalSapo.textContent = article.sapo || '';
+    if (modalBody) modalBody.innerHTML = article.content || '<p>Bài viết chưa có nội dung toàn văn.</p>';
+    if (modalImg && article.image) {
+      modalImg.src = imageUrl(article.image);
+      modalImg.style.display = 'block';
+    }
+    showToast('Đã tải toàn văn bài viết');
+  } catch (error) {
+    console.error('Article crawling failed:', error);
+    showToast('Không thể tải toàn văn, đang hiển thị phần tóm tắt');
+  }
+}
+
+async function translateText(text, targetLang) {
+  if (!text || !text.trim() || targetLang === 'vi') return text;
+  try {
+    const res = await fetch(`/api/translate?text=${encodeURIComponent(text)}&to=${encodeURIComponent(targetLang)}&from=vi`);
+    const json = await res.json();
+    if (json.ok && json.translatedText) return json.translatedText;
+  } catch (err) {
+    console.warn('Translate error:', err);
+  }
+  return text;
+}
+
+async function translateModalArticle(targetLang) {
+  if (!currentOriginalContent) return;
+  currentModalLang = targetLang;
+
+  const titleEl = document.getElementById('modal-title');
+  const sapoEl = document.getElementById('modal-sapo');
+  const bodyEl = document.getElementById('modal-body-content');
+
+  // Khôi phục bản gốc tiếng Việt
+  if (targetLang === 'vi') {
+    if (titleEl) titleEl.textContent = currentOriginalContent.title;
+    if (sapoEl) sapoEl.textContent = currentOriginalContent.sapo;
+    if (bodyEl) bodyEl.innerHTML = currentOriginalContent.content;
+    showToast('Đã chuyển về bản tin tiếng Việt gốc');
+    return;
+  }
+
+  showToast('Đang dịch bài viết sang ngôn ngữ mới...');
+
+  try {
+    // Dịch tiêu đề
+    const translatedTitlePromise = translateText(currentOriginalContent.title, targetLang);
+
+    // Dịch sapo
+    const translatedSapoPromise = currentOriginalContent.sapo ? translateText(currentOriginalContent.sapo, targetLang) : Promise.resolve('');
+
+    // Dịch các đoạn văn bản trong phần thân bài
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = currentOriginalContent.content;
+    const paragraphs = Array.from(tempDiv.querySelectorAll('p')).filter(p => p.textContent.trim().length > 0);
+
+    // Giới hạn dịch tối đa 5 đoạn đầu tiên để bảo đảm tốc độ và quota API
+    const paragraphsToTranslate = paragraphs.slice(0, 5);
+    const translatedParagraphsPromises = paragraphsToTranslate.map(p => translateText(p.textContent.trim(), targetLang));
+
+    const [transTitle, transSapo, ...transParas] = await Promise.all([
+      translatedTitlePromise,
+      translatedSapoPromise,
+      ...translatedParagraphsPromises
+    ]);
+
+    // Kiểm tra nếu người dùng chưa đổi ngôn ngữ khác trong khi chờ
+    if (currentModalLang !== targetLang) return;
+
+    if (titleEl) titleEl.textContent = transTitle;
+    if (sapoEl) sapoEl.textContent = transSapo;
+
+    if (bodyEl && transParas.length > 0) {
+      bodyEl.innerHTML = transParas.map(text => `<p>${text}</p>`).join('') + 
+        `<div class="translation-indicator"><i class="fa-solid fa-circle-check"></i> Bài viết đã được dịch tự động bởi VNEWS AI Translation</div>`;
+    }
+
+    showToast('Bản dịch đã sẵn sàng!');
+  } catch (error) {
+    console.error('Translation failed:', error);
+    showToast('Không thể hoàn tất dịch thuật, vui lòng thử lại');
+  }
 }
 
 function openReaderModalById(id) {
@@ -488,6 +831,18 @@ function openReaderModalById(id) {
     article = NEWS_DATA.subHeroes.find(a => a.id === id) ||
               NEWS_DATA.businessNews.find(a => a.id === id);
   }
+    // Tìm theo thứ tự ưu tiên: RSS đang hiển thị → bài đã lưu → dữ liệu mẫu
+    const mockArticles = [
+      NEWS_DATA.mainHero,
+      NEWS_DATA.eMagazine,
+      ...NEWS_DATA.subHeroes,
+      ...NEWS_DATA.businessNews
+    ];
+
+    let article =
+      rssArticles.find(item => item.id === id) ||
+      bookmarks.find(item => item.id === id) ||
+      mockArticles.find(item => item.id === id);
 
   if (!article) {
     article = {
@@ -529,6 +884,12 @@ function closeReaderModal() {
 }
 
 // Đọc bài viết bằng giọng nói.
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+// Quick modal TTS trigger với hỗ trợ đa ngôn ngữ
 function playModalTTS() {
   if (!('speechSynthesis' in window)) {
     showToast('Trình duyệt không hỗ trợ phát giọng nói');
@@ -541,11 +902,11 @@ function playModalTTS() {
   const sapo = document.getElementById('modal-sapo').textContent;
 
   const utterance = new SpeechSynthesisUtterance(`${title}. ${sapo}`);
-  utterance.lang = 'vi-VN';
+  utterance.lang = LANG_TTS_MAP[currentModalLang] || 'vi-VN';
   utterance.rate = 1.0;
 
   window.speechSynthesis.speak(utterance);
-  showToast('Đang đọc to bài viết qua giọng AI...');
+  showToast(`Đang phát giọng đọc AI (${utterance.lang})...`);
 }
 
 /* ==========================================================================
@@ -688,6 +1049,7 @@ function showToast(message) {
    ========================================================================== */
 //vị trí mặc định
 const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM'}
+const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM'} 
 
 function initWeather() {
   if (!navigator.geolocation) {
@@ -727,6 +1089,7 @@ async function loadWeather(lat, lon, city) {
     console.log('Thời tiết: ', city, temp, code); //kiểm tra trong log xem lấy được local và temp chưa
     renderWeather(city, temp, code);
 
+    
   } catch (error) {
     //báo lỗi
     console.error('Weather failed: ', error);
@@ -753,3 +1116,4 @@ function renderWeather(city, temp, code) {
   document.getElementById('weather-desc').textContent = info.text;
   document.getElementById('weather-icon').className = 'fa-solid ' + info.icon
 }
+} 

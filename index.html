@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://vnews24h.vn/">
   <meta property="og:title" content="VNEWS 24H - Tin tức Đa chiều, Chính xác và Kịp thời">
   <meta property="og:description" content="Trải nghiệm đọc báo chuẩn mực với tin tức dòng sự kiện, đọc báo bằng giọng nói AI và các chuyên đề phóng sự đặc sắc.">
-  <meta property="og:image" content="assets/images/hero.jpg">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80">
   <!-- Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
@@ -50,9 +50,9 @@
           <span id="current-time">16:55:00</span>
         </div>
 
-        <div class="weather-badge">
-          <i class="fa-solid fa-cloud-sun" style="color: #f59e0b;"></i>
-          <span>Hà Nội: <strong>26°C</strong>, Có mây</span>
+        <div class="weather-badge" id="weather-badge">
+          <i id="weather-icon" class="fa-solid fa-spinner fa-spin"></i>
+          <span><span id="weather-city">Đang Tải</span>: <strong id="weather-temp">--°C</strong>, <span id="weather-desc">...</span></span>
         </div>
 
         <div class="market-ticker">
@@ -63,6 +63,18 @@
       </div>
 
       <div class="top-bar-right">
+        <label class="rss-source-control" for="rss-source-select">
+          <span>Nguồn:</span>
+          <select id="rss-source-select" aria-label="Chọn nguồn tin RSS">
+            <option value="vnexpress">VnExpress</option>
+            <option value="tuoitre">Tuổi Trẻ</option>
+            <option value="thanhnien">Thanh Niên</option>
+            <option value="dantri">Dân Trí</option>
+          </select>
+          <button id="rss-refresh-btn" class="rss-refresh-btn" type="button" title="Làm mới RSS">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+        </label>
         <!-- Bookmark Trigger -->
         <button class="bookmark-toggle-btn" id="bookmark-toggle-btn" title="Xem danh sách bài đã lưu">
           <i class="fa-solid fa-bookmark" style="color: var(--accent-crimson);"></i>
@@ -208,7 +220,7 @@
           <article class="sub-hero-card" onclick="openReaderModalById('sub-01')">
             <div class="card-media">
               <span class="category-tag blue">Kinh Doanh</span>
-              <img src="assets/images/business.jpg" alt="Thị trường tài chính chứng khoán" loading="lazy">
+              <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80" alt="Thị trường tài chính chứng khoán" loading="lazy">
             </div>
             <div class="card-body">
               <h3 class="card-title">Phố Wall và Thị trường Châu Á Đồng Loạt Khởi Sắc Sau Tín Hiệu Lãi Suất Mới</h3>
@@ -223,7 +235,7 @@
           <article class="sub-hero-card" onclick="openReaderModalById('sub-02')">
             <div class="card-media">
               <span class="category-tag gold">Năng Lượng Xanh</span>
-              <img src="assets/images/green_tech.jpg" alt="Dự án năng lượng gió và mặt trời" loading="lazy">
+              <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&auto=format&fit=crop&q=80" alt="Dự án năng lượng gió và mặt trời" loading="lazy">
             </div>
             <div class="card-body">
               <h3 class="card-title">Đại Dự Án Điện Gió Ngoài Khơi Hòa Lưới Điện Quốc Gia: Bước Tiến Vượt Bậc Về Net-Zero</h3>
@@ -240,7 +252,7 @@
           <article class="main-hero-card">
             <div class="main-hero-media" onclick="openReaderModalById('hero-01')">
               <span class="hero-overlay-badge"><i class="fa-solid fa-fire"></i> TIÊU ĐIỂM TOÀN CẦU</span>
-              <img src="assets/images/hero.jpg" alt="Hội nghị Thượng đỉnh Trí tuệ Nhân tạo Toàn cầu 2026">
+              <img src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80" alt="Hội nghị Thượng đỉnh Trí tuệ Nhân tạo Toàn cầu 2026">
             </div>
 
             <div class="main-hero-content">
@@ -333,13 +345,14 @@
             </div>
           </div>
 
-          <div class="news-cards-grid">
+          <div class="news-cards-grid" id="rss-news-grid">
             <!-- News Card 1 -->
             <article class="news-card" onclick="openReaderModalById('biz-01')">
               <div class="card-media">
                 <span class="category-tag blue">Tài Chính Số</span>
-                <img src="assets/images/business.jpg" alt="Giao dịch không tiền mặt" loading="lazy">
+                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&auto=format&fit=crop&q=80" alt="Giao dịch không tiền mặt" loading="lazy">
               </div>
+              <button class="load-more-btn" id="rss-load-more-btn" type="button">Xem thêm tin tức</button>
               <div class="card-body">
                 <h3 class="card-title">Chuyển Đổi Số Trong Ngành Ngân Hàng: Khi Thanh Toán Không Chạm Trở Thành Lựa Chọn Thống Trị</h3>
                 <p class="card-sapo">Tỷ lệ giao dịch trực tuyến qua mã QR và ví điện tử đạt mức kỷ lục 82%, định hình lại hành vi chi tiêu.</p>
@@ -354,7 +367,7 @@
             <article class="news-card" onclick="openReaderModalById('biz-02')">
               <div class="card-media">
                 <span class="category-tag gold">Công Nghệ Xanh</span>
-                <img src="assets/images/green_tech.jpg" alt="Pin xe điện thế hệ mới" loading="lazy">
+                <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&auto=format&fit=crop&q=80" alt="Pin xe điện thế hệ mới" loading="lazy">
               </div>
               <div class="card-body">
                 <h3 class="card-title">Pin Thế Hệ Mới Đột Phá: Sạc Đầy Xe Điện Chỉ Trong 10 Phút Với Độ Bền 1 Triệu Km</h3>
@@ -370,7 +383,7 @@
             <article class="news-card" onclick="openReaderModalById('biz-03')">
               <div class="card-media">
                 <span class="category-tag red">Thể Thao</span>
-                <img src="assets/images/sports.jpg" alt="Khoảnh khắc chiến thắng bóng đá" loading="lazy">
+                <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=80" alt="Khoảnh khắc chiến thắng bóng đá" loading="lazy">
               </div>
               <div class="card-body">
                 <h3 class="card-title">Bàn Thắng Vàng Phút Bù Giờ Thứ 94 Đưa Đội Tuyển Vào Lịch Sử Vòng Loại Thế Giới</h3>
@@ -388,7 +401,7 @@
              7. E-MAGAZINE / SPECIAL STORY SHOWCASE
              ================================================================ -->
         <section class="emagazine-feature" id="section-emagazine" onclick="openReaderModalById('emag-01')">
-          <img src="assets/images/lifestyle.jpg" alt="Không gian văn hóa cà phê Hà Nội" class="emagazine-bg" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1600&auto=format&fit=crop&q=80" alt="Không gian văn hóa cà phê Hà Nội" class="emagazine-bg" loading="lazy">
           <div class="emagazine-overlay"></div>
           
           <div class="emagazine-content">
