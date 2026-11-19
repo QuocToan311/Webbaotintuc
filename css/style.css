@@ -2263,7 +2263,6 @@ img {
   cursor: pointer;
   outline: none;
 }
-
 .translate-select option {
   background: var(--bg-surface);
   color: var(--text-primary);

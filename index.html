@@ -743,38 +743,36 @@
        ====================================================================== -->
   <div class="modal-backdrop" id="reader-modal">
     <div class="reader-modal-card">
-
+      
       <!-- Toolbar -->
-      <div class="modal-header-toolbar">
-        <div class="modal-tools">
-          <button class="tts-btn" onclick="playModalTTS()">
-            <i class="fa-solid fa-volume-high"></i> <span>Nghe AI đọc</span>
-          </button>
-          <!-- Translation Selector -->
-          <div class="translate-dropdown-wrapper">
-            <i class="fa-solid fa-language"></i>
-            <select id="modal-translate-select" class="translate-select" title="Dịch bài viết sang ngôn ngữ khác">
-              <option value="vi" selected>🇻🇳 Tiếng Việt (Gốc)</option>
-              <option value="en">🇬🇧 English</option>
-              <option value="fr">🇫🇷 Français</option>
-              <option value="zh-CN">🇨🇳 中文</option>
-              <option value="ja">🇯🇵 日本語</option>
-              <option value="ko">🇰🇷 한국어</option>
-            </select>
-          </div>
-          <!-- Download / Export PDF -->
-          <button class="action-pill-btn" id="modal-export-pdf-btn" onclick="exportArticleToPDF()" title="Tải bài viết về máy dạng PDF">
-            <i class="fa-solid fa-file-pdf"></i> <span>Xuất PDF</span>
-          </button>
-          <button class="action-pill-btn" id="modal-offline-save-btn" onclick="saveArticleOffline()" title="Lưu bài viết để đọc Offline">
-            <i class="fa-solid fa-cloud-arrow-down"></i> <span>Lưu Offline</span>
-          </button>
-          <button class="font-size-btn" id="font-minus-btn" title="Giảm cỡ chữ">A-</button>
-          <button class="font-size-btn" id="font-plus-btn" title="Tăng cỡ chữ">A+</button>
-          <button class="font-size-btn" onclick="showToast('Đã sao chép liên kết bài viết vào clipboard!')"
-            title="Chia sẻ">
-            <i class="fa-solid fa-share-nodes"></i>
-          </button>
+        <!-- Toolbar -->
+        <div class="modal-header-toolbar">
+            <div class="modal-tools">
+
+                <!-- Nút nghe AI đọc -->
+                <button class="tts-btn" onclick="playModalTTS()">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span>Nghe AI đọc</span>
+                </button>
+
+                <!-- NÚT CHẾ ĐỘ ĐỌC TẬP TRUNG -->
+                <button class="focus-mode-btn" id="focus-mode-btn" type="button">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Chế độ đọc tập trung</span>
+                </button>
+
+                <!-- Điều chỉnh cỡ chữ -->
+                <button class="font-size-btn" id="font-minus-btn" title="Giảm cỡ chữ">A-</button>
+                <button class="font-size-btn" id="font-plus-btn" title="Tăng cỡ chữ">A+</button>
+
+                <!-- Chia sẻ -->
+                <button class="font-size-btn" onclick="showToast('Đã sao chép liên kết bài viết vào clipboard!')" title="Chia sẻ">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </button>
+            </div>
+            <button class="modal-close-btn" id="modal-close-btn" title="Đóng cửa sổ">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
         <button class="modal-close-btn" id="modal-close-btn" title="Đóng cửa sổ">
