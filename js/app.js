@@ -342,8 +342,7 @@ function initThemeToggle() {
    4. Bookmarks & Offline Reading System
    ========================================================================== */
 function initBookmarks() {
-  const bookmarkBtn = document.getElementById('bookmark-toggle-btn');
-  const drawer = document.getElementById('bookmarks-drawer');
+  const bookmarkBtn = document.getElementById('bookmark-toggle-btn'); 
   const drawerBackdrop = document.getElementById('drawer-backdrop');
   const drawerCloseBtn = document.getElementById('drawer-close-btn');
 
@@ -1258,6 +1257,14 @@ function showToast(message) {
 const DEFAULT_LOCATION = { lat: 10.8231, lon: 106.6297, city: 'TP.HCM' };
 
 function initWeather() {
+  //vẽ lại widget mỗi khi phần weather trong store thay đổi
+  let prevWeather = store.getState().weather;
+  store.subscribe(() => {
+    const weather = store.getState().weather;
+    if (weather !== prevWeather) renderWeather(weather);
+    prevWeather = weather;
+  });
+
   if (!navigator.geolocation) {
     //nếu trình duyệt không hỗ trợ định vị => gọi tới vị trí mặc định
     loadWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.city);
@@ -1278,6 +1285,9 @@ function initWeather() {
 }
 
 async function loadWeather(lat, lon, city) {
+  //báo cho store biết đang bắt đầu tải
+  store.dispatch(actions.requestWeather(city));
+
   //ghép URL có lat, lon
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
               `&current=temperature_2m,weather_code&timezone=auto`;
@@ -1293,13 +1303,14 @@ async function loadWeather(lat, lon, city) {
     const code = data.current.weather_code;
 
     console.log('Thời tiết: ', city, temp, code); //kiểm tra trong log xem lấy được local và temp chưa
-    renderWeather(city, temp, code);
 
-    
+    //lưu dữ liệu vào store => subscribe ở initWeather sẽ tự gọi renderWeather
+    store.dispatch(actions.receiveWeather({ city, temp, code }));
   } catch (error) {
     //báo lỗi
     console.error('Weather failed: ', error);
-    document.getElementById('weather-desc').textContent = 'Không tải được';
+    //lưu lỗi vào store => renderWeather sẽ hiện 'Không tải được'
+    store.dispatch(actions.failWeather(error.message));
   }
 }
 
@@ -1314,16 +1325,26 @@ function getWeatherIcon(code) {
   return { text: 'Không rõ', icon: 'fa-cloud' };
 }
 
-function renderWeather(city, temp, code) {
-  const info = getWeatherIcon(code);
-
+function renderWeather(weather) {
   const cityEl = document.getElementById('weather-city');
   const tempEl = document.getElementById('weather-temp');
   const descEl = document.getElementById('weather-desc');
   const iconEl = document.getElementById('weather-icon');
 
-  if (cityEl) cityEl.textContent = city;
-  if (tempEl) tempEl.textContent = Math.round(temp) + '°C';
+  //đang tải => giữ nguyên giao diện mặc định trong index.html (icon xoay, 'Đang Tải')
+  if (weather.status === 'loading') return;
+
+  //lỗi => chỉ báo không tải được
+  if (weather.status === 'error') {
+    if (descEl) descEl.textContent = 'Không tải được';
+    return;
+  }
+
+  //thành công => lấy dữ liệu từ store ra để hiển thị
+  const info = getWeatherIcon(weather.code);
+
+  if (cityEl) cityEl.textContent = weather.city;
+  if (tempEl) tempEl.textContent = Math.round(weather.temp) + '°C';
   if (descEl) descEl.textContent = info.text;
   if (iconEl) iconEl.className = 'fa-solid ' + info.icon;
 }

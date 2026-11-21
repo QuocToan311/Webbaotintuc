@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VNEWS 24H - Redux Store (Bookmarks & Offline)
+   VNEWS 24H - Redux Store (Bookmarks & Offline & Thời tiết)
    ========================================================================== */
 
 // ---- Action types ----
@@ -7,7 +7,10 @@ const ActionTypes = {
   BOOKMARK_TOGGLED: 'bookmarks/toggled',
   BOOKMARK_ADDED: 'bookmarks/added',
   OFFLINE_SAVED: 'offline/saved',
-  OFFLINE_REMOVED: 'offline/removed'
+  OFFLINE_REMOVED: 'offline/removed',
+  WEATHER_REQUESTED: 'weather/requested',
+  WEATHER_RECEIVED: 'weather/received',
+  WEATHER_FAILED: 'weather/failed'
 };
 
 // ---- Action creators ----
@@ -15,7 +18,13 @@ const actions = {
   toggleBookmark: article => ({ type: ActionTypes.BOOKMARK_TOGGLED, payload: article }),
   addBookmark: article => ({ type: ActionTypes.BOOKMARK_ADDED, payload: article }),
   saveOffline: article => ({ type: ActionTypes.OFFLINE_SAVED, payload: article }),
-  removeOffline: id => ({ type: ActionTypes.OFFLINE_REMOVED, payload: id })
+  removeOffline: id => ({ type: ActionTypes.OFFLINE_REMOVED, payload: id }),
+  //bắt đầu gọi API thời tiết
+  requestWeather: city => ({ type: ActionTypes.WEATHER_REQUESTED, payload: city }),
+  //gọi API thành công, payload = { city, temp, code }
+  receiveWeather: weather => ({ type: ActionTypes.WEATHER_RECEIVED, payload: weather }),
+  //gọi API lỗi, payload = nội dung lỗi
+  failWeather: message => ({ type: ActionTypes.WEATHER_FAILED, payload: message })
 };
 
 // ---- Đọc/ghi localStorage an toàn ----
@@ -64,6 +73,38 @@ function offlineReducer(state = loadList('vnews-offline-articles'), action) {
   }
 }
 
+//trạng thái ban đầu của thời tiết (chưa gọi API)
+const initialWeatherState = {
+  status: 'idle', //idle | loading | success | error
+  city: '',
+  temp: null,
+  code: null,
+  error: null
+};
+
+function weatherReducer(state = initialWeatherState, action) {
+  switch (action.type) {
+    case ActionTypes.WEATHER_REQUESTED:
+      //đang tải => ghi tên vị trí, xóa lỗi cũ
+      return { ...state, status: 'loading', city: action.payload, error: null };
+    case ActionTypes.WEATHER_RECEIVED:
+      //tải xong => lưu nhiệt độ và mã thời tiết
+      return {
+        ...state,
+        status: 'success',
+        city: action.payload.city,
+        temp: action.payload.temp,
+        code: action.payload.code,
+        error: null
+      };
+    case ActionTypes.WEATHER_FAILED:
+      //lỗi => giữ dữ liệu cũ (nếu có), chỉ lưu lỗi
+      return { ...state, status: 'error', error: action.payload };
+    default:
+      return state;
+  }
+}
+
 // ---- Selectors ----
 const selectors = {
   isBookmarked: (state, id) => state.bookmarks.some(item => item.id === id),
@@ -74,7 +115,8 @@ const selectors = {
 const store = Redux.createStore(
   Redux.combineReducers({
     bookmarks: bookmarksReducer,
-    offline: offlineReducer
+    offline: offlineReducer,
+    weather: weatherReducer
   }),
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );
