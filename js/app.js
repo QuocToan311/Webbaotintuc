@@ -18,10 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initNetworkStatusListener();
 });
 
-let rssArticles = [];
-let rssVisibleCount = 6;
-let rssSource = 'vnexpress';
-let rssCategory = 'home';
+//trạng thái RSS (nguồn, chuyên mục, danh sách tin...) nằm trong store.getState().rss
+//AbortController không phải dữ liệu thuần nên giữ ngoài store
 let rssRequestController = null;
 
 const rssCategoryMap = {
@@ -37,63 +35,90 @@ function initRssIntegration() {
   const refreshBtn = document.getElementById('rss-refresh-btn');
   const loadMoreBtn = document.getElementById('rss-load-more-btn');
 
+  //dropdown hiện đúng nguồn báo đã lưu từ lần trước
+  if (sourceSelect) sourceSelect.value = store.getState().rss.source;
+
+  //vẽ lại khi store thay đổi
+  let prevRss = store.getState().rss;
+  store.subscribe(() => {
+    const rss = store.getState().rss;
+    //danh sách tin hoặc số tin hiển thị đổi => vẽ lại tin
+    if (rss.items !== prevRss.items || rss.visibleCount !== prevRss.visibleCount) renderRssNews();
+    //trạng thái tải đổi => bật / tắt icon xoay của nút làm mới
+    if (rss.status !== prevRss.status) renderRssRefreshButton(rss.status);
+    prevRss = rss;
+  });
+
   if (sourceSelect) {
     sourceSelect.addEventListener('change', () => {
-      rssSource = sourceSelect.value;
+      store.dispatch(actions.changeRssSource(sourceSelect.value));
       loadRssFeed(true);
     });
   }
   if (refreshBtn) refreshBtn.addEventListener('click', () => loadRssFeed(true));
   if (loadMoreBtn) loadMoreBtn.addEventListener('click', () => {
-    rssVisibleCount += 6;
-    renderRssNews();
+    store.dispatch(actions.loadMoreRss());
   });
 
   loadRssFeed(false);
-  setInterval(() => loadRssFeed(false), 5 * 60 * 1000);
+  //tự làm mới mỗi 5 phút: chạy ngầm, giữ số tin đã 'Xem thêm', không hiện toast
+  setInterval(() => loadRssFeed(false, true), 5 * 60 * 1000);
 }
 
-async function loadRssFeed(forceRefresh) {
-  const refreshBtn = document.getElementById('rss-refresh-btn');
+async function loadRssFeed(forceRefresh, isBackground = false) {
+  //đang có request cũ => hủy để không bị tin cũ đè lên tin mới
   if (rssRequestController) rssRequestController.abort();
   rssRequestController = new AbortController();
-  if (refreshBtn) {
-    refreshBtn.disabled = true;
-    refreshBtn.classList.add('is-loading');
-  }
+
+  //báo cho store biết đang bắt đầu tải
+  store.dispatch(actions.requestRss());
 
   try {
+    //lấy nguồn và chuyên mục hiện tại từ store
+    const { source, category } = store.getState().rss;
     const query = new URLSearchParams({
-      source: rssSource,
-      category: rssCategory,
+      source,
+      category,
       ...(forceRefresh ? { refresh: '1' } : {})
     });
     const response = await fetch(`/api/rss?${query}`, { signal: rssRequestController.signal });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || 'Không thể tải RSS');
-    rssArticles = result.items.map(normalizeRssArticle);
-    rssVisibleCount = 6;
-    NEWS_DATA.breakingNews = rssArticles.slice(0, 8).map(item => item.title);
-    renderRssNews();
+
+    const items = result.items.map(normalizeRssArticle);
+    //lưu tin vào store => subscribe ở initRssIntegration sẽ tự gọi renderRssNews
+    store.dispatch(actions.receiveRss(items, isBackground));
+
+    NEWS_DATA.breakingNews = items.slice(0, 8).map(item => item.title);
     // Đồng bộ lại danh sách phát với toàn bộ các tin tức mới tải về
     if (typeof refreshAudioPlaylist === 'function') {
       refreshAudioPlaylist();
     }
-    showToast(`Đã cập nhật ${rssArticles.length} tin từ ${result.source}`);
+    if (!isBackground) showToast(`Đã cập nhật ${items.length} tin từ ${result.source}`);
   } catch (error) {
-    if (error.name !== 'AbortError') {
-      rssArticles = getFallbackArticles();
-      rssVisibleCount = 6;
-      renderRssNews();
-      showToast(`RSS tạm thời không khả dụng, đang dùng dữ liệu mẫu`);
-      console.error('RSS loading failed:', error);
-    }
-  } finally {
-    if (refreshBtn) {
-      refreshBtn.disabled = false;
-      refreshBtn.classList.remove('is-loading');
+    //request bị hủy vì đã có request mới => bỏ qua
+    if (error.name === 'AbortError') return;
+
+    console.error('RSS loading failed:', error);
+    //lưu lỗi vào store, reducer tự quyết giữ tin cũ hay dùng dữ liệu mẫu
+    store.dispatch(actions.failRss(error.message, getFallbackArticles()));
+
+    if (!isBackground) {
+      showToast(store.getState().rss.isFallback
+        ? 'RSS tạm thời không khả dụng, đang dùng dữ liệu mẫu'
+        : 'Không làm mới được RSS, đang giữ tin cũ');
     }
   }
+}
+
+function renderRssRefreshButton(status) {
+  const refreshBtn = document.getElementById('rss-refresh-btn');
+  if (!refreshBtn) return;
+
+  //đang tải => khóa nút và cho icon xoay
+  const isLoading = status === 'loading';
+  refreshBtn.disabled = isLoading;
+  refreshBtn.classList.toggle('is-loading', isLoading);
 }
 
 function normalizeRssArticle(item) {
@@ -116,6 +141,8 @@ function getFallbackArticles() {
 }
 
 function renderRssNews() {
+  //lấy danh sách tin và số tin hiển thị từ store
+  const { items: rssArticles, visibleCount: rssVisibleCount } = store.getState().rss;
   const visible = rssArticles.slice(0, rssVisibleCount);
   if (!visible.length) return;
 
@@ -177,6 +204,7 @@ function renderRssNews() {
 }
 
 function findRssArticle(id) {
+  const rssArticles = store.getState().rss.items;
   return rssArticles.find(article => article.id === id) || getFallbackArticles().find(article => article.id === id) || rssArticles[0];
 }
 
@@ -479,6 +507,7 @@ function buildAudioPlaylist() {
   const playlist = [];
 
   // 1. Thu thập tối đa 15-20 tin mới nhất từ RSS hiện tại
+  const rssArticles = store.getState().rss.items;
   if (rssArticles && rssArticles.length > 0) {
     rssArticles.slice(0, 15).forEach((item, idx) => {
       if (item && item.title) {
@@ -1057,6 +1086,7 @@ async function translateModalArticle(targetLang) {
 
 function openReaderModalById(id) {
   const { bookmarks, offline: offlineArticles } = store.getState();
+  const rssArticles = store.getState().rss.items;
   const mockArticles = [
     NEWS_DATA.mainHero,
     NEWS_DATA.eMagazine,
@@ -1234,7 +1264,7 @@ function initCategoryNavigation() {
       const category = rssCategoryMap[label];
       if (category) {
         e.preventDefault();
-        rssCategory = category;
+        store.dispatch(actions.changeRssCategory(category));
         loadRssFeed(false);
       }
     });

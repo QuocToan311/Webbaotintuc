@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VNEWS 24H - Redux Store (Bookmarks & Offline & Thời tiết & Cài đặt)
+   VNEWS 24H - Redux Store (Bookmarks & Offline & Thời tiết & Cài đặt & RSS)
    ========================================================================== */
 
 // ---- Action types ----
@@ -13,7 +13,13 @@ const ActionTypes = {
   WEATHER_FAILED: 'weather/failed',
   THEME_SET: 'preferences/themeSet',
   FONT_SIZE_INCREASED: 'preferences/fontSizeIncreased',
-  FONT_SIZE_DECREASED: 'preferences/fontSizeDecreased'
+  FONT_SIZE_DECREASED: 'preferences/fontSizeDecreased',
+  RSS_SOURCE_CHANGED: 'rss/sourceChanged',
+  RSS_CATEGORY_CHANGED: 'rss/categoryChanged',
+  RSS_REQUESTED: 'rss/requested',
+  RSS_RECEIVED: 'rss/received',
+  RSS_FAILED: 'rss/failed',
+  RSS_LOAD_MORE: 'rss/loadMore'
 };
 
 // ---- Action creators ----
@@ -32,7 +38,19 @@ const actions = {
   setTheme: theme => ({ type: ActionTypes.THEME_SET, payload: theme }),
   //nút A+ / A- trong cửa sổ đọc bài
   increaseFontSize: () => ({ type: ActionTypes.FONT_SIZE_INCREASED }),
-  decreaseFontSize: () => ({ type: ActionTypes.FONT_SIZE_DECREASED })
+  decreaseFontSize: () => ({ type: ActionTypes.FONT_SIZE_DECREASED }),
+  //chọn nguồn báo trong dropdown, payload = 'vnexpress' | 'tuoitre' | 'thanhnien' | 'dantri'
+  changeRssSource: source => ({ type: ActionTypes.RSS_SOURCE_CHANGED, payload: source }),
+  //bấm menu chuyên mục, payload = 'home' | 'thoisu' | ...
+  changeRssCategory: category => ({ type: ActionTypes.RSS_CATEGORY_CHANGED, payload: category }),
+  //bắt đầu gọi /api/rss
+  requestRss: () => ({ type: ActionTypes.RSS_REQUESTED }),
+  //tải xong, payload = { items, keepVisibleCount } (keepVisibleCount = true khi tự làm mới 5 phút)
+  receiveRss: (items, keepVisibleCount) => ({ type: ActionTypes.RSS_RECEIVED, payload: { items, keepVisibleCount } }),
+  //tải lỗi, payload = { message, fallbackItems } (fallbackItems = dữ liệu mẫu dùng khi chưa có tin)
+  failRss: (message, fallbackItems) => ({ type: ActionTypes.RSS_FAILED, payload: { message, fallbackItems } }),
+  //bấm nút 'Xem thêm tin tức'
+  loadMoreRss: () => ({ type: ActionTypes.RSS_LOAD_MORE })
 };
 
 // ---- Đọc/ghi localStorage an toàn ----
@@ -76,6 +94,19 @@ function loadFontSize() {
     return value >= FONT_SIZE_MIN && value <= FONT_SIZE_MAX ? value : FONT_SIZE_DEFAULT;
   } catch {
     return FONT_SIZE_DEFAULT;
+  }
+}
+
+//nguồn báo hợp lệ (trùng với value trong dropdown ở index.html)
+const RSS_SOURCES = ['vnexpress', 'tuoitre', 'thanhnien', 'dantri'];
+
+//đọc nguồn báo đã lưu, chưa có hoặc sai => VnExpress
+function loadRssSource() {
+  try {
+    const value = localStorage.getItem('vnews-rss-source');
+    return RSS_SOURCES.includes(value) ? value : 'vnexpress';
+  } catch {
+    return 'vnexpress';
   }
 }
 
@@ -167,6 +198,64 @@ function preferencesReducer(state = initialPreferencesState, action) {
   }
 }
 
+//số tin hiện thêm mỗi lần bấm 'Xem thêm'
+const RSS_PAGE_SIZE = 6;
+
+//luồng tin RSS: chỉ nhớ nguồn báo, chuyên mục luôn về Trang chủ khi F5
+const initialRssState = {
+  source: loadRssSource(),
+  category: 'home',
+  items: [],
+  itemsKey: '',  //tin đang hiện thuộc nguồn + chuyên mục nào, vd 'vnexpress:home'
+  visibleCount: RSS_PAGE_SIZE,
+  status: 'idle', //idle | loading | success | error
+  error: null,
+  isFallback: false //true = đang hiện dữ liệu mẫu
+};
+
+function rssReducer(state = initialRssState, action) {
+  switch (action.type) {
+    case ActionTypes.RSS_SOURCE_CHANGED:
+      return { ...state, source: action.payload };
+    case ActionTypes.RSS_CATEGORY_CHANGED:
+      return { ...state, category: action.payload };
+    case ActionTypes.RSS_REQUESTED:
+      return { ...state, status: 'loading', error: null };
+    case ActionTypes.RSS_RECEIVED:
+      return {
+        ...state,
+        items: action.payload.items,
+        itemsKey: state.source + ':' + state.category,
+        //tự làm mới 5 phút => giữ số tin đã 'Xem thêm', còn lại => về 6 tin
+        visibleCount: action.payload.keepVisibleCount ? state.visibleCount : RSS_PAGE_SIZE,
+        status: 'success',
+        error: null,
+        isFallback: false
+      };
+    case ActionTypes.RSS_FAILED: {
+      //đang có tin thật của đúng nguồn + chuyên mục này => giữ nguyên tin cũ, chỉ lưu lỗi
+      const hasOldItems = state.items.length > 0 && !state.isFallback &&
+        state.itemsKey === state.source + ':' + state.category;
+      if (hasOldItems) return { ...state, status: 'error', error: action.payload.message };
+
+      //chưa có tin (hoặc tin cũ là của nguồn / chuyên mục khác) => dùng dữ liệu mẫu
+      return {
+        ...state,
+        items: action.payload.fallbackItems,
+        itemsKey: '',
+        visibleCount: RSS_PAGE_SIZE,
+        status: 'error',
+        error: action.payload.message,
+        isFallback: true
+      };
+    }
+    case ActionTypes.RSS_LOAD_MORE:
+      return { ...state, visibleCount: state.visibleCount + RSS_PAGE_SIZE };
+    default:
+      return state;
+  }
+}
+
 // ---- Selectors ----
 const selectors = {
   isBookmarked: (state, id) => state.bookmarks.some(item => item.id === id),
@@ -179,7 +268,8 @@ const store = Redux.createStore(
     bookmarks: bookmarksReducer,
     offline: offlineReducer,
     weather: weatherReducer,
-    preferences: preferencesReducer
+    preferences: preferencesReducer,
+    rss: rssReducer
   }),
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );
@@ -196,6 +286,9 @@ store.subscribe(() => {
   //theme chỉ được lưu sau khi người dùng bấm nút (theme khác null)
   if (prefs.theme !== lastPrefs.theme && prefs.theme) saveValue('vnews-theme', prefs.theme);
   if (prefs.fontSize !== lastPrefs.fontSize) saveValue('vnews-font-size', prefs.fontSize);
+
+  //chỉ lưu nguồn báo, không lưu chuyên mục và danh sách tin
+  if (state.rss.source !== lastPersistedState.rss.source) saveValue('vnews-rss-source', state.rss.source);
 
   lastPersistedState = state;
 });
