@@ -310,23 +310,34 @@ function initThemeToggle() {
   const themeIcon = document.getElementById('theme-icon');
   const themeLabel = document.getElementById('theme-label');
 
-  const savedTheme = localStorage.getItem('vnews-theme') ||
-    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  //vẽ lại theme mỗi khi preferences.theme trong store thay đổi
+  let prevTheme = store.getState().preferences.theme;
+  store.subscribe(() => {
+    const theme = store.getState().preferences.theme;
+    if (theme !== prevTheme) applyTheme(getActiveTheme());
+    prevTheme = theme;
+  });
 
-  applyTheme(savedTheme);
+  //lần đầu vào trang => áp dụng theme đã lưu, chưa lưu thì theo máy
+  applyTheme(getActiveTheme());
 
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      applyTheme(newTheme);
+      const newTheme = getActiveTheme() === 'dark' ? 'light' : 'dark';
+      //gửi lựa chọn vào store => store tự lưu localStorage, subscribe tự gọi applyTheme
+      store.dispatch(actions.setTheme(newTheme));
       showToast(`Đã chuyển sang giao diện ${newTheme === 'dark' ? 'Tối' : 'Sáng'}`);
     });
   }
 
+  function getActiveTheme() {
+    //người dùng đã bấm nút => dùng theme đã chọn, chưa bấm => theo cài đặt sáng/tối của máy
+    return store.getState().preferences.theme ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('vnews-theme', theme);
 
     if (themeIcon) {
       themeIcon.className = theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
@@ -709,7 +720,6 @@ function pauseAudio() {
 let currentArticleData = null;
 let currentOriginalContent = null;
 let currentModalLang = 'vi';
-let currentFontSize = 17;
 
 const LANG_TTS_MAP = {
   'vi': 'vi-VN',
@@ -728,6 +738,17 @@ function initArticleReader() {
   const commentForm = document.getElementById('modal-comment-form');
   const focusBtn = document.getElementById('focus-mode-btn');
   const readerCard = modal?.querySelector('.reader-modal-card');
+
+  //đổi cỡ chữ mỗi khi preferences.fontSize trong store thay đổi
+  let prevFontSize = store.getState().preferences.fontSize;
+  store.subscribe(() => {
+    const fontSize = store.getState().preferences.fontSize;
+    if (fontSize !== prevFontSize) updateArticleFontSize();
+    prevFontSize = fontSize;
+  });
+
+  //áp dụng cỡ chữ đã lưu ngay khi vào trang
+  updateArticleFontSize();
 
   if (closeBtn) {
     closeBtn.addEventListener('click', closeReaderModal);
@@ -765,20 +786,15 @@ function initArticleReader() {
 
   if (fontPlusBtn) {
     fontPlusBtn.addEventListener('click', () => {
-      if (currentFontSize < 24) {
-        currentFontSize += 2;
-        updateArticleFontSize();
-      }
+      //giới hạn 13 - 25px do reducer kiểm tra
+      store.dispatch(actions.increaseFontSize());
     });
   }
 
   // Giảm cỡ chữ.
   if (fontMinusBtn) {
     fontMinusBtn.addEventListener('click', () => {
-      if (currentFontSize > 13) {
-        currentFontSize -= 2;
-        updateArticleFontSize();
-      }
+      store.dispatch(actions.decreaseFontSize());
     });
   }
 
@@ -826,7 +842,8 @@ function updateArticleFontSize() {
   const bodyText = document.querySelector('.article-content-text');
 
   if (bodyText) {
-    bodyText.style.fontSize = `${currentFontSize}px`;
+    //lấy cỡ chữ từ store
+    bodyText.style.fontSize = `${store.getState().preferences.fontSize}px`;
   }
 }
 function openReaderModal(article) {
