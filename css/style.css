@@ -2842,3 +2842,13 @@ img {
   color: var(--text-muted);
   font-weight: 500;
 }
+
+/* Triệt tiêu hoàn toàn Toast Container & Toast */
+#toast-container,
+.toast-container,
+.toast {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
