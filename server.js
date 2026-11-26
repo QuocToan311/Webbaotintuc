@@ -278,6 +278,7 @@ function extractArticle(html, articleUrl) {
 }
 
 function sendJson(res, status, payload) {
+  if (res.headersSent) return;
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(payload));
 }
@@ -417,7 +418,11 @@ function serveStatic(req, res, url) {
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (url.pathname.startsWith('/api/')) {
-    handleApi(req, res, url).catch(error => sendJson(res, 500, { ok: false, error: error.message }));
+    handleApi(req, res, url).catch(error => {
+      if (!res.headersSent) {
+        sendJson(res, 500, { ok: false, error: error.message });
+      }
+    });
     return;
   }
   serveStatic(req, res, url);
