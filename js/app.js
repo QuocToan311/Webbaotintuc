@@ -46,8 +46,9 @@ function initRssIntegration() {
   }
   if (refreshBtn) refreshBtn.addEventListener('click', () => loadRssFeed(true));
   if (loadMoreBtn) loadMoreBtn.addEventListener('click', () => {
-    rssVisibleCount += 6;
+    rssVisibleCount += 9;
     renderRssNews();
+    showToast(`Đã tải thêm bài viết (Đang hiển thị ${Math.min(rssVisibleCount, rssArticles.length)}/${rssArticles.length} bài)`);
   });
 
   loadRssFeed(false);
@@ -176,9 +177,14 @@ function renderRssNews() {
     grid.querySelectorAll('[data-rss-id]').forEach(card => card.addEventListener('click', () => openReaderModal(findRssArticle(card.dataset.rssId))));
   }
   const loadMoreBtn = document.getElementById('rss-load-more-btn');
+  const statusEl = document.getElementById('load-more-status');
   if (loadMoreBtn) {
-    loadMoreBtn.hidden = rssVisibleCount >= rssArticles.length;
-    loadMoreBtn.textContent = `Xem thêm tin tức (${Math.max(rssArticles.length - rssVisibleCount, 0)})`;
+    const remaining = Math.max(rssArticles.length - rssVisibleCount, 0);
+    loadMoreBtn.hidden = remaining === 0;
+    loadMoreBtn.innerHTML = `<i class="fa-solid fa-angles-down"></i> <span>Xem Thêm Nhiều Bài Viết (Còn ${remaining} bài)</span>`;
+  }
+  if (statusEl) {
+    statusEl.textContent = `Đang hiển thị ${Math.min(rssVisibleCount, rssArticles.length)} trên tổng số ${rssArticles.length} bài viết mới nhất`;
   }
 }
 
