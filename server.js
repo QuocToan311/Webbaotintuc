@@ -468,7 +468,17 @@ function serveStatic(req, res, url) {
       res.end('404 Not Found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const isAsset = ['.css', '.js', '.jpg', '.jpeg', '.png', '.webp', '.svg', '.ico'].includes(ext);
+    
+    // Tối ưu hóa Cache Header: Tài nguyên tĩnh cache 1 ngày (hoặc revalidate), HTML no-cache để luôn cập nhật
+    const cacheControl = isAsset ? 'public, max-age=86400' : 'no-cache';
+    
+    res.writeHead(200, { 
+      'Content-Type': contentType,
+      'Cache-Control': cacheControl
+    });
     fs.createReadStream(filePath).pipe(res);
   });
 }

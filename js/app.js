@@ -63,6 +63,11 @@ async function loadRssFeed(forceRefresh) {
     refreshBtn.classList.add('is-loading');
   }
 
+  // Hiển thị Skeleton Loading khi người dùng chủ động làm mới hoặc đổi danh mục
+  if (forceRefresh) {
+    showRssSkeletonLoading();
+  }
+
   try {
     const query = new URLSearchParams({
       source: rssSource,
@@ -1527,4 +1532,21 @@ function renderFinanceUI(data) {
   const eurRate = document.getElementById('modal-eur-rate');
   if (usdRate && data.usd_vnd) usdRate.textContent = data.usd_vnd.rate + ' VND';
   if (eurRate && data.eur_vnd) eurRate.textContent = data.eur_vnd.rate + ' VND';
+}
+
+
+function showRssSkeletonLoading() {
+  const subContainer = document.querySelector('.sub-hero-col');
+  if (subContainer) {
+    subContainer.innerHTML = Array(2).fill(0).map(() => `
+      <article class="sub-hero-card is-skeleton">
+        <div class="card-media skeleton"></div>
+        <div class="card-body">
+          <div class="skeleton skeleton-text title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text short"></div>
+        </div>
+      </article>
+    `).join('');
+  }
 }
