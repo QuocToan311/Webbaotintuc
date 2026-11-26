@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCategoryNavigation();
   initWeather();
   initNetworkStatusListener();
+  initFinanceWidget();
 });
 
 let rssArticles = [];
@@ -1416,4 +1417,114 @@ function initNetworkStatusListener() {
   window.addEventListener('offline', updateStatus);
 
   updateStatus();
+}
+
+
+/* ==========================================================================
+   14. Finance & Market Widget Module (Chỉ số tài chính, Giá vàng & Tỷ giá)
+   ========================================================================== */
+function initFinanceWidget() {
+  const tickerEl = document.getElementById('market-ticker');
+  const modalEl = document.getElementById('finance-modal');
+  const closeBtn = document.getElementById('finance-modal-close');
+  const expandBtn = document.getElementById('market-expand-btn');
+
+  if (tickerEl) {
+    tickerEl.addEventListener('click', openFinanceModal);
+  }
+  if (expandBtn) {
+    expandBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openFinanceModal();
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeFinanceModal);
+  }
+  if (modalEl) {
+    modalEl.addEventListener('click', (e) => {
+      if (e.target === modalEl) closeFinanceModal();
+    });
+  }
+
+  // Tải dữ liệu ban đầu và hẹn giờ cập nhật mỗi 5 phút
+  fetchFinanceData();
+  setInterval(fetchFinanceData, 5 * 60 * 1000);
+}
+
+function openFinanceModal() {
+  const modal = document.getElementById('finance-modal');
+  if (modal) {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeFinanceModal() {
+  const modal = document.getElementById('finance-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+async function fetchFinanceData() {
+  try {
+    const res = await fetch('/api/finance');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const result = await res.json();
+    if (result.ok && result.data) {
+      renderFinanceUI(result.data);
+    }
+  } catch (err) {
+    console.warn('Finance data load failed:', err);
+  }
+}
+
+function renderFinanceUI(data) {
+  // 1. Cập nhật thanh ticker ngoài Header
+  const valVnindex = document.getElementById('val-vnindex');
+  const changeVnindex = document.getElementById('change-vnindex');
+  const valGold = document.getElementById('val-gold');
+  const valUsd = document.getElementById('val-usd');
+
+  if (valVnindex && data.vnindex) valVnindex.textContent = data.vnindex.value.toLocaleString('vi-VN');
+  if (changeVnindex && data.vnindex) {
+    changeVnindex.textContent = (data.vnindex.change > 0 ? '+' : '') + data.vnindex.change;
+  }
+  if (valGold && data.gold_sjc) valGold.textContent = data.gold_sjc.sell;
+  if (valUsd && data.usd_vnd) valUsd.textContent = data.usd_vnd.rate;
+
+  // 2. Cập nhật nội dung Popup chi tiết
+  const timeEl = document.getElementById('finance-update-time');
+  if (timeEl && data.updatedAt) timeEl.textContent = data.updatedAt;
+
+  const modalVnindexVal = document.getElementById('modal-vnindex-val');
+  const modalVnindexChange = document.getElementById('modal-vnindex-change');
+  if (modalVnindexVal && data.vnindex) modalVnindexVal.textContent = data.vnindex.value.toLocaleString('vi-VN');
+  if (modalVnindexChange && data.vnindex) {
+    modalVnindexChange.textContent = `${data.vnindex.change > 0 ? '+' : ''}${data.vnindex.change} (${data.vnindex.percent})`;
+  }
+
+  const modalVn30Val = document.getElementById('modal-vn30-val');
+  const modalVn30Change = document.getElementById('modal-vn30-change');
+  if (modalVn30Val && data.vn30) modalVn30Val.textContent = data.vn30.value.toLocaleString('vi-VN');
+  if (modalVn30Change && data.vn30) {
+    modalVn30Change.textContent = `${data.vn30.change > 0 ? '+' : ''}${data.vn30.change} (${data.vn30.percent})`;
+  }
+
+  const goldSjcBuy = document.getElementById('modal-gold-sjc-buy');
+  const goldSjcSell = document.getElementById('modal-gold-sjc-sell');
+  if (goldSjcBuy && data.gold_sjc) goldSjcBuy.textContent = data.gold_sjc.buy;
+  if (goldSjcSell && data.gold_sjc) goldSjcSell.textContent = data.gold_sjc.sell;
+
+  const goldRingBuy = document.getElementById('modal-gold-ring-buy');
+  const goldRingSell = document.getElementById('modal-gold-ring-sell');
+  if (goldRingBuy && data.gold_ring) goldRingBuy.textContent = data.gold_ring.buy;
+  if (goldRingSell && data.gold_ring) goldRingSell.textContent = data.gold_ring.sell;
+
+  const usdRate = document.getElementById('modal-usd-rate');
+  const eurRate = document.getElementById('modal-eur-rate');
+  if (usdRate && data.usd_vnd) usdRate.textContent = data.usd_vnd.rate + ' VND';
+  if (eurRate && data.eur_vnd) eurRate.textContent = data.eur_vnd.rate + ' VND';
 }
