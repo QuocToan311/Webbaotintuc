@@ -21,7 +21,7 @@
   <meta property="og:image" content="assets/images/hero.jpg">
   <!-- Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=1795675531167">
 
   <!-- JSON-LD Structured Data for NewsMediaOrganization -->
   <script type="application/ld+json">
@@ -61,10 +61,22 @@
               id="weather-desc">...</span></span>
         </div>
 
-        <div class="market-ticker">
-          <span class="market-item up"><i class="fa-solid fa-arrow-trend-up"></i> VN-Index: 1.288,6 (+12.4)</span>
-          <span class="market-item up"><i class="fa-solid fa-coins"></i> Vàng SJC: 89,5 tr</span>
-          <span class="market-item"><i class="fa-solid fa-dollar-sign"></i> USD: 25.420</span>
+        <div class="market-ticker" id="market-ticker" title="Nhấp để xem bảng chi tiết giá vàng & tỷ giá">
+          <span class="market-item up" id="ticker-vnindex">
+            <i class="fa-solid fa-arrow-trend-up"></i> 
+            <span>VN-Index: <strong id="val-vnindex">1.288,65</strong> (<span id="change-vnindex">+12.45</span>)</span>
+          </span>
+          <span class="market-item up" id="ticker-gold">
+            <i class="fa-solid fa-coins"></i> 
+            <span>Vàng SJC: <strong id="val-gold">89,50</strong> tr</span>
+          </span>
+          <span class="market-item up" id="ticker-usd">
+            <i class="fa-solid fa-dollar-sign"></i> 
+            <span>USD: <strong id="val-usd">25.425</strong></span>
+          </span>
+          <button class="market-expand-btn" id="market-expand-btn" title="Bảng chi tiết tài chính">
+            <i class="fa-solid fa-chart-line"></i>
+          </button>
         </div>
       </div>
 
@@ -405,16 +417,12 @@
                 <span class="category-tag blue">Tài Chính Số</span>
                 <img src="assets/images/business.jpg" alt="Giao dịch không tiền mặt" loading="lazy">
               </div>
-              <button class="load-more-btn" id="rss-load-more-btn" type="button">Xem thêm tin tức</button>
               <div class="card-body">
-                <h3 class="card-title">Chuyển Đổi Số Trong Ngành Ngân Hàng: Khi Thanh Toán Không Chạm Trở Thành Lựa Chọn
-                  Thống Trị</h3>
-                <p class="card-sapo">Tỷ lệ giao dịch trực tuyến qua mã QR và ví điện tử đạt mức kỷ lục 82%, định hình
-                  lại hành vi chi tiêu.</p>
+                <h3 class="card-title">Chuyển Đổi Số Trong Ngành Ngân Hàng: Khi Thanh Toán Không Chạm Trở Thành Lựa Chọn Thống Trị</h3>
+                <p class="card-sapo">Tỷ lệ giao dịch trực tuyến qua mã QR và ví điện tử đạt mức kỷ lục 82%, định hình lại hành vi chi tiêu.</p>
                 <div class="card-meta">
                   <span>13:45 • Nguyễn Văn Hưng</span>
-                  <span><i class="fa-regular fa-bookmark"
-                      onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[0]);"></i></span>
+                  <span><i class="fa-regular fa-bookmark" onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[0]);"></i></span>
                 </div>
               </div>
             </article>
@@ -426,14 +434,11 @@
                 <img src="assets/images/green_tech.jpg" alt="Pin xe điện thế hệ mới" loading="lazy">
               </div>
               <div class="card-body">
-                <h3 class="card-title">Pin Thế Hệ Mới Đột Phá: Sạc Đầy Xe Điện Chỉ Trong 10 Phút Với Độ Bền 1 Triệu Km
-                </h3>
-                <p class="card-sapo">Công nghệ pin thể rắn vừa được thương mại hóa thành công, giải quyết triệt để nỗi
-                  lo sạc pin.</p>
+                <h3 class="card-title">Pin Thế Hệ Mới Đột Phá: Sạc Đầy Xe Điện Chỉ Trong 10 Phút Với Độ Bền 1 Triệu Km</h3>
+                <p class="card-sapo">Công nghệ pin thể rắn vừa được thương mại hóa thành công, giải quyết triệt để nỗi lo sạc pin.</p>
                 <div class="card-meta">
                   <span>12:10 • Trịnh Thùy Linh</span>
-                  <span><i class="fa-regular fa-bookmark"
-                      onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[1]);"></i></span>
+                  <span><i class="fa-regular fa-bookmark" onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[1]);"></i></span>
                 </div>
               </div>
             </article>
@@ -445,17 +450,23 @@
                 <img src="assets/images/sports.jpg" alt="Khoảnh khắc chiến thắng bóng đá" loading="lazy">
               </div>
               <div class="card-body">
-                <h3 class="card-title">Bàn Thắng Vàng Phút Bù Giờ Thứ 94 Đưa Đội Tuyển Vào Lịch Sử Vòng Loại Thế Giới
-                </h3>
-                <p class="card-sapo">Màn lội ngược dòng ngoạn mục đầy cảm xúc làm nức lòng hàng triệu người hâm mộ sau
-                  120 phút nghẹt thở.</p>
+                <h3 class="card-title">Bàn Thắng Vàng Phút Bù Giờ Thứ 94 Đưa Đội Tuyển Vào Lịch Sử Vòng Loại Thế Giới</h3>
+                <p class="card-sapo">Màn lội ngược dòng ngoạn mục đầy cảm xúc làm nức lòng hàng triệu người hâm mộ sau 120 phút nghẹt thở.</p>
                 <div class="card-meta">
                   <span>11:30 • Vũ Hải Đăng</span>
-                  <span><i class="fa-regular fa-bookmark"
-                      onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[2]);"></i></span>
+                  <span><i class="fa-regular fa-bookmark" onclick="event.stopPropagation(); toggleBookmark(NEWS_DATA.businessNews[2]);"></i></span>
                 </div>
               </div>
             </article>
+          </div>
+
+          <!-- Nút Xem Thêm Nhiều Bài Viết -->
+          <div class="load-more-container" id="load-more-container">
+            <button class="load-more-btn" id="rss-load-more-btn" type="button">
+              <i class="fa-solid fa-angles-down"></i>
+              <span>Xem Thêm Nhiều Bài Viết</span>
+            </button>
+            <div class="load-more-status" id="load-more-status">Đang hiển thị 6 bài viết</div>
           </div>
         </div>
 
@@ -748,7 +759,6 @@
         <!-- Toolbar -->
         <div class="modal-header-toolbar">
             <div class="modal-tools">
-
                 <!-- Nút nghe AI đọc -->
                 <button class="tts-btn" onclick="playModalTTS()">
                     <i class="fa-solid fa-volume-high"></i>
@@ -848,9 +858,105 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.1/redux.min.js"></script>
-  <script src="js/store.js"></script>
+  <script src="js/store.js?v=1795799288396"></script>
   <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=1795799288396"></script>
+
+  <!-- ======================================================================
+       POPUP / MODAL CHI TIẾT TÀI CHÍNH & THỊ TRƯỜNG
+       ====================================================================== -->
+  <div class="modal-backdrop" id="finance-modal">
+    <div class="finance-modal-card">
+      <div class="finance-modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <i class="fa-solid fa-chart-line" style="color: var(--accent-crimson); font-size: 1.2rem;"></i>
+          <h3 style="font-size: 1.1rem; font-weight: 800;">Bảng Chỉ Số Tài Chính & Hàng Hóa</h3>
+        </div>
+        <button class="modal-close-btn" id="finance-modal-close" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="finance-modal-body">
+        <div class="finance-updated-time">
+          <i class="fa-regular fa-clock"></i> Cập nhật lúc: <span id="finance-update-time">--:--</span> • Nguồn dữ liệu thị trường
+        </div>
+
+        <!-- Tab 1: Chứng khoán -->
+        <div class="finance-section">
+          <h4 class="finance-section-title"><i class="fa-solid fa-arrow-trend-up"></i> Thị Trường Chứng Khoán</h4>
+          <div class="finance-grid-cards">
+            <div class="finance-card">
+              <span class="finance-card-label">VN-INDEX</span>
+              <div class="finance-card-val up" id="modal-vnindex-val">1.288,65</div>
+              <div class="finance-card-change up" id="modal-vnindex-change">+12.45 (+0.97%)</div>
+            </div>
+            <div class="finance-card">
+              <span class="finance-card-label">VN30-INDEX</span>
+              <div class="finance-card-val up" id="modal-vn30-val">1.335,20</div>
+              <div class="finance-card-change up" id="modal-vn30-change">+14.10 (+1.07%)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Giá vàng -->
+        <div class="finance-section">
+          <h4 class="finance-section-title"><i class="fa-solid fa-coins"></i> Giá Vàng Trong Nước (Triệu đồng / lượng)</h4>
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Loại vàng</th>
+                <th>Mua vào</th>
+                <th>Bán ra</th>
+                <th>Xu hướng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Vàng miếng SJC</strong></td>
+                <td id="modal-gold-sjc-buy">87.50</td>
+                <td id="modal-gold-sjc-sell" class="bold-val">89.50</td>
+                <td><span class="status-tag up"><i class="fa-solid fa-arrow-up"></i> +500K</span></td>
+              </tr>
+              <tr>
+                <td><strong>Vàng nhẫn 999.9</strong></td>
+                <td id="modal-gold-ring-buy">86.20</td>
+                <td id="modal-gold-ring-sell" class="bold-val">87.80</td>
+                <td><span class="status-tag up"><i class="fa-solid fa-arrow-up"></i> +300K</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tab 3: Tỷ giá ngoại tệ -->
+        <div class="finance-section">
+          <h4 class="finance-section-title"><i class="fa-solid fa-money-bill-transfer"></i> Tỷ Giá Ngoại Tệ (VND)</h4>
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Ngoại tệ</th>
+                <th>Tỷ giá quy đổi</th>
+                <th>Biến động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>USD (Đô la Mỹ)</strong></td>
+                <td id="modal-usd-rate" class="bold-val">25.425 VND</td>
+                <td><span class="status-tag up"><i class="fa-solid fa-arrow-up"></i> +15 VND</span></td>
+              </tr>
+              <tr>
+                <td><strong>EUR (Đồng Euro)</strong></td>
+                <td id="modal-eur-rate" class="bold-val">27.150 VND</td>
+                <td><span class="status-tag down"><i class="fa-solid fa-arrow-down"></i> -40 VND</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

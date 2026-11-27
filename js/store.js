@@ -198,8 +198,9 @@ function preferencesReducer(state = initialPreferencesState, action) {
   }
 }
 
-//số tin hiện thêm mỗi lần bấm 'Xem thêm'
-const RSS_PAGE_SIZE = 6;
+//số tin hiện lúc đầu và số tin hiện thêm mỗi lần bấm 'Xem thêm' (theo PR #7: đầu 6, thêm 9)
+const RSS_INITIAL_COUNT = 6;
+const RSS_LOAD_MORE_STEP = 9;
 
 //luồng tin RSS: chỉ nhớ nguồn báo, chuyên mục luôn về Trang chủ khi F5
 const initialRssState = {
@@ -207,7 +208,7 @@ const initialRssState = {
   category: 'home',
   items: [],
   itemsKey: '',  //tin đang hiện thuộc nguồn + chuyên mục nào, vd 'vnexpress:home'
-  visibleCount: RSS_PAGE_SIZE,
+  visibleCount: RSS_INITIAL_COUNT,
   status: 'idle', //idle | loading | success | error
   error: null,
   isFallback: false //true = đang hiện dữ liệu mẫu
@@ -227,7 +228,7 @@ function rssReducer(state = initialRssState, action) {
         items: action.payload.items,
         itemsKey: state.source + ':' + state.category,
         //tự làm mới 5 phút => giữ số tin đã 'Xem thêm', còn lại => về 6 tin
-        visibleCount: action.payload.keepVisibleCount ? state.visibleCount : RSS_PAGE_SIZE,
+        visibleCount: action.payload.keepVisibleCount ? state.visibleCount : RSS_INITIAL_COUNT,
         status: 'success',
         error: null,
         isFallback: false
@@ -243,14 +244,14 @@ function rssReducer(state = initialRssState, action) {
         ...state,
         items: action.payload.fallbackItems,
         itemsKey: '',
-        visibleCount: RSS_PAGE_SIZE,
+        visibleCount: RSS_INITIAL_COUNT,
         status: 'error',
         error: action.payload.message,
         isFallback: true
       };
     }
     case ActionTypes.RSS_LOAD_MORE:
-      return { ...state, visibleCount: state.visibleCount + RSS_PAGE_SIZE };
+      return { ...state, visibleCount: state.visibleCount + RSS_LOAD_MORE_STEP };
     default:
       return state;
   }
