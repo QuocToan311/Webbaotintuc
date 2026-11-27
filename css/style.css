@@ -2267,7 +2267,6 @@ img {
   background: var(--bg-surface);
   color: var(--text-primary);
 }
-
 .translation-indicator {
   display: inline-flex;
   align-items: center;
