@@ -2252,7 +2252,6 @@ img {
 .translate-dropdown-wrapper:hover {
   border-color: var(--accent-blue);
 }
-
 .translate-select {
   background: transparent;
   border: none;
