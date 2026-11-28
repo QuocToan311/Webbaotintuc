@@ -21,7 +21,7 @@
   <meta property="og:image" content="assets/images/hero.jpg">
   <!-- Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css?v=1795675531167">
+  <link rel="stylesheet" href="css/style.css?v=1795855057505">
 
   <!-- JSON-LD Structured Data for NewsMediaOrganization -->
   <script type="application/ld+json">
@@ -133,8 +133,11 @@
       <div class="masthead-center">
         <div class="search-bar-quick">
           <span class="search-icon-btn"><i class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="quick-search-input" class="search-input"
-            placeholder="Tìm kiếm tin tức, chủ đề nóng, chuyên gia... (Nhấn Enter)">
+          <input type="text" id="quick-search-input" class="search-input" autocomplete="off"
+            role="combobox" aria-expanded="false" aria-controls="search-suggest" aria-autocomplete="list"
+            placeholder="Tìm kiếm tin tức, chủ đề nóng... (gõ không dấu cũng được)">
+          <!-- Danh sách gợi ý tìm kiếm, do renderSearchResults() vẽ -->
+          <div id="search-suggest" class="search-suggest" role="listbox" hidden></div>
         </div>
       </div>
 
@@ -858,9 +861,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.1/redux.min.js"></script>
-  <script src="js/store.js?v=1795799288396"></script>
+  <script src="js/store.js?v=1795855057505"></script>
   <script src="js/data.js"></script>
-  <script src="js/app.js?v=1795799288396"></script>
+  <script src="js/app.js?v=1795855057505"></script>
 
   <!-- ======================================================================
        POPUP / MODAL CHI TIẾT TÀI CHÍNH & THỊ TRƯỜNG

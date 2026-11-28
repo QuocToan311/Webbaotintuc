@@ -1237,34 +1237,167 @@ function initNewsletter() {
    ========================================================================== */
 function initSearch() {
   const searchInput = document.getElementById('quick-search-input');
-  if (!searchInput) return;
+  const suggestBox = document.getElementById('search-suggest');
+  if (!searchInput || !suggestBox) return;
+
+  //vẽ lại gợi ý khi từ khóa, tin RSS hoặc bài đã lưu thay đổi
+  //(vd RSS tự làm mới 5 phút trong lúc đang gõ => gợi ý tự cập nhật)
+  let prevState = store.getState();
+  store.subscribe(() => {
+    const state = store.getState();
+    if (state.search !== prevState.search || state.rss.items !== prevState.rss.items ||
+        state.bookmarks !== prevState.bookmarks || state.offline !== prevState.offline) {
+      renderSearchResults();
+    }
+    prevState = state;
+  });
+
+  //gõ tới đâu tìm tới đó
+  searchInput.addEventListener('input', () => {
+    store.dispatch(actions.changeSearchQuery(searchInput.value));
+  });
+
+  //bấm lại vào ô tìm => hiện lại gợi ý của từ khóa đang có
+  searchInput.addEventListener('focus', renderSearchResults);
+
+  //bấm ra ngoài => ẩn gợi ý nhưng giữ nguyên từ khóa
+  searchInput.addEventListener('blur', () => hideSearchResults());
 
   searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const keyword = searchInput.value.trim().toLowerCase();
-      if (!keyword) return;
+    const { items } = selectSearchResults(store.getState());
 
-      // Search across our database
-      const allNews = [
-        NEWS_DATA.mainHero,
-        ...NEWS_DATA.subHeroes,
-        ...NEWS_DATA.businessNews,
-        NEWS_DATA.eMagazine
-      ];
-
-      const matched = allNews.find(item =>
-        item.title.toLowerCase().includes(keyword) ||
-        (item.sapo && item.sapo.toLowerCase().includes(keyword))
-      );
-
-      if (matched) {
-        openReaderModal(matched);
-        showToast(`Tìm thấy bài viết liên quan đến "${keyword}"`);
-      } else {
-        showToast(`Không tìm thấy bài báo nào khớp với "${keyword}"`);
-      }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      //chặn con trỏ nhảy về đầu / cuối ô
+      e.preventDefault();
+      store.dispatch(actions.moveSearchActive(e.key === 'ArrowDown' ? 1 : -1, items.length));
+    } else if (e.key === 'Enter') {
+      //Enter => mở bài đang chọn, chưa chọn thì mở bài đầu tiên
+      const target = items[store.getState().search.activeIndex] || items[0];
+      if (target) openSearchResult(target.id);
+    } else if (e.key === 'Escape') {
+      //Esc => xóa từ khóa và đóng gợi ý
+      searchInput.value = '';
+      store.dispatch(actions.clearSearch());
+      searchInput.blur();
     }
   });
+
+  //bấm vào 1 gợi ý => mở bài
+  //dùng mousedown thay cho click vì click chạy sau blur, lúc đó gợi ý đã bị ẩn
+  suggestBox.addEventListener('mousedown', (e) => {
+    const itemEl = e.target.closest('[data-search-id]');
+    if (!itemEl) return;
+    e.preventDefault();
+    openSearchResult(itemEl.dataset.searchId);
+  });
+}
+
+function openSearchResult(id) {
+  const searchInput = document.getElementById('quick-search-input');
+  //xóa ô tìm trước rồi mới mở bài
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.blur();
+  }
+  store.dispatch(actions.clearSearch());
+  openReaderModalById(id);
+}
+
+function hideSearchResults() {
+  const searchInput = document.getElementById('quick-search-input');
+  const suggestBox = document.getElementById('search-suggest');
+  if (suggestBox) suggestBox.hidden = true;
+  if (searchInput) {
+    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.removeAttribute('aria-activedescendant');
+  }
+}
+
+function renderSearchResults() {
+  const searchInput = document.getElementById('quick-search-input');
+  const suggestBox = document.getElementById('search-suggest');
+  if (!searchInput || !suggestBox) return;
+
+  const state = store.getState();
+  const { words, items, total } = selectSearchResults(state);
+
+  //ô tìm không được chọn hoặc từ khóa quá ngắn => ẩn gợi ý
+  if (document.activeElement !== searchInput || words.join(' ').length < SEARCH_MIN_LENGTH) {
+    hideSearchResults();
+    return;
+  }
+
+  const { activeIndex } = state.search;
+
+  if (!items.length) {
+    //không có kết quả => báo ngay trong khung gợi ý (toast đang bị tắt)
+    suggestBox.innerHTML = `<div class="search-suggest-empty">Không tìm thấy bài báo nào khớp với "${escapeHtml(state.search.query.trim())}"</div>`;
+  } else {
+    suggestBox.innerHTML = items.map((item, index) => {
+      const isSaved = selectors.isBookmarked(state, item.id) || selectors.isOffline(state, item.id);
+      return `
+        <div class="search-suggest-item${index === activeIndex ? ' is-active' : ''}" id="search-option-${index}"
+          role="option" aria-selected="${index === activeIndex}" data-search-id="${escapeAttribute(item.id)}">
+          <div class="search-suggest-title">${highlightSearchMatch(item.title, words)}</div>
+          <div class="search-suggest-meta">
+            <span>${escapeHtml(item.source || item.category || 'Tin tức')}</span>
+            ${isSaved ? '<span class="search-suggest-badge"><i class="fa-solid fa-bookmark"></i> Đã lưu</span>' : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    //nhiều hơn 8 kết quả => gợi ý gõ thêm từ
+    if (total > items.length) {
+      suggestBox.innerHTML += `<div class="search-suggest-more">Đang hiện ${items.length}/${total} kết quả, gõ thêm từ để thu hẹp</div>`;
+    }
+  }
+
+  suggestBox.hidden = false;
+  searchInput.setAttribute('aria-expanded', 'true');
+
+  //có bài đang chọn bằng phím => báo cho trình đọc màn hình và cuộn tới bài đó
+  const activeEl = suggestBox.querySelector('.is-active');
+  if (activeEl) {
+    searchInput.setAttribute('aria-activedescendant', activeEl.id);
+    activeEl.scrollIntoView({ block: 'nearest' });
+  } else {
+    searchInput.removeAttribute('aria-activedescendant');
+  }
+}
+
+//tô đậm các từ khớp trong tiêu đề, so sánh không dấu nhưng hiển thị chữ gốc có dấu
+function highlightSearchMatch(title, words) {
+  const chars = Array.from(String(title || '').normalize('NFC'));
+  //normalizeSearchText giữ nguyên số ký tự => vị trí trong chuỗi không dấu = vị trí trong tiêu đề gốc
+  const plain = normalizeSearchText(chars.join(''));
+  const marked = new Array(chars.length).fill(false);
+
+  //đánh dấu mọi chỗ xuất hiện của từng từ
+  words.forEach(word => {
+    let from = 0;
+    let index = plain.indexOf(word, from);
+    while (index !== -1) {
+      for (let i = index; i < index + word.length; i++) marked[i] = true;
+      from = index + word.length;
+      index = plain.indexOf(word, from);
+    }
+  });
+
+  //ghép lại thành HTML, gom các ký tự liền nhau cùng trạng thái vào 1 thẻ <mark>
+  let html = '';
+  let run = '';
+  let runMarked = false;
+  chars.forEach((char, i) => {
+    if (marked[i] !== runMarked && run) {
+      html += runMarked ? `<mark>${escapeHtml(run)}</mark>` : escapeHtml(run);
+      run = '';
+    }
+    runMarked = marked[i];
+    run += char;
+  });
+  if (run) html += runMarked ? `<mark>${escapeHtml(run)}</mark>` : escapeHtml(run);
+  return html;
 }
 
 /* ==========================================================================

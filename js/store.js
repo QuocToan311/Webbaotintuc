@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VNEWS 24H - Redux Store (Bookmarks & Offline & Thời tiết & Cài đặt & RSS)
+   VNEWS 24H - Redux Store (Bookmarks & Offline & Thời tiết & Cài đặt & RSS & Tìm kiếm)
    ========================================================================== */
 
 // ---- Action types ----
@@ -19,7 +19,10 @@ const ActionTypes = {
   RSS_REQUESTED: 'rss/requested',
   RSS_RECEIVED: 'rss/received',
   RSS_FAILED: 'rss/failed',
-  RSS_LOAD_MORE: 'rss/loadMore'
+  RSS_LOAD_MORE: 'rss/loadMore',
+  SEARCH_QUERY_CHANGED: 'search/queryChanged',
+  SEARCH_ACTIVE_MOVED: 'search/activeMoved',
+  SEARCH_CLEARED: 'search/cleared'
 };
 
 // ---- Action creators ----
@@ -50,7 +53,13 @@ const actions = {
   //tải lỗi, payload = { message, fallbackItems } (fallbackItems = dữ liệu mẫu dùng khi chưa có tin)
   failRss: (message, fallbackItems) => ({ type: ActionTypes.RSS_FAILED, payload: { message, fallbackItems } }),
   //bấm nút 'Xem thêm tin tức'
-  loadMoreRss: () => ({ type: ActionTypes.RSS_LOAD_MORE })
+  loadMoreRss: () => ({ type: ActionTypes.RSS_LOAD_MORE }),
+  //gõ vào ô tìm kiếm, payload = chữ trong ô
+  changeSearchQuery: query => ({ type: ActionTypes.SEARCH_QUERY_CHANGED, payload: query }),
+  //bấm phím lên / xuống, payload = { step: 1 | -1, total: số kết quả đang hiện }
+  moveSearchActive: (step, total) => ({ type: ActionTypes.SEARCH_ACTIVE_MOVED, payload: { step, total } }),
+  //bấm Esc hoặc đã mở bài => xóa ô tìm kiếm
+  clearSearch: () => ({ type: ActionTypes.SEARCH_CLEARED })
 };
 
 // ---- Đọc/ghi localStorage an toàn ----
@@ -257,6 +266,81 @@ function rssReducer(state = initialRssState, action) {
   }
 }
 
+//tìm kiếm: chỉ là trạng thái tạm, không lưu localStorage
+const initialSearchState = {
+  query: '',
+  activeIndex: -1 //vị trí đang chọn bằng phím lên / xuống, -1 = chưa chọn
+};
+
+function searchReducer(state = initialSearchState, action) {
+  switch (action.type) {
+    case ActionTypes.SEARCH_QUERY_CHANGED:
+      //đổi từ khóa => bỏ vị trí đang chọn cũ
+      return { query: action.payload, activeIndex: -1 };
+    case ActionTypes.SEARCH_ACTIVE_MOVED: {
+      const { step, total } = action.payload;
+      if (!total) return state;
+      //đi quá cuối thì quay về đầu và ngược lại
+      return { ...state, activeIndex: (state.activeIndex + step + total) % total };
+    }
+    case ActionTypes.SEARCH_CLEARED:
+      return initialSearchState;
+    default:
+      return state;
+  }
+}
+
+//bỏ dấu tiếng Việt + viết thường, vd 'Bóng Đá' => 'bong da'
+//giữ nguyên độ dài chuỗi (mỗi ký tự => đúng 1 ký tự) để tô đậm đúng vị trí trong tiêu đề gốc
+//NFC trước để chữ có dấu gõ kiểu tổ hợp (e + dấu) gộp lại thành 1 ký tự
+function normalizeSearchText(text = '') {
+  return Array.from(String(text).normalize('NFC'), char => {
+    const plain = char.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    //viết thường từng ký tự rồi lấy 1 ký tự đầu để độ dài không bị lệch
+    return (plain || char).replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().charAt(0);
+  }).join('');
+}
+
+//từ khóa ngắn hơn 2 ký tự thì chưa tìm, tối đa 8 gợi ý
+const SEARCH_MIN_LENGTH = 2;
+const SEARCH_MAX_RESULTS = 8;
+
+//tách từ khóa thành từng từ đã bỏ dấu, vd 'Giá  vàng' => ['gia', 'vang']
+function getSearchWords(query) {
+  return normalizeSearchText(query).split(/\s+/).filter(Boolean);
+}
+
+function selectSearchResults(state) {
+  const words = getSearchWords(state.search.query);
+  if (words.join(' ').length < SEARCH_MIN_LENGTH) return { words, items: [], total: 0 };
+
+  //gom tin RSS (cả tin chưa bấm 'Xem thêm') + bài đã lưu, bỏ bài trùng id
+  //RSS lỗi và đang hiện dữ liệu mẫu => rss.items chính là dữ liệu mẫu
+  const seen = new Set();
+  const pool = [...state.rss.items, ...state.offline, ...state.bookmarks].filter(item => {
+    if (!item || !item.id || !item.title || seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+
+  //bài phải chứa đủ mọi từ trong tiêu đề hoặc sapo, khớp tiêu đề thì xếp lên trước
+  const matched = [];
+  pool.forEach(item => {
+    const title = normalizeSearchText(item.title);
+    const text = title + ' ' + normalizeSearchText(item.sapo || item.description || '');
+    if (!words.every(word => text.includes(word))) return;
+    const inTitle = words.every(word => title.includes(word));
+    matched.push({ item, inTitle });
+  });
+  matched.sort((a, b) => Number(b.inTitle) - Number(a.inTitle));
+
+  return {
+    words,
+    items: matched.slice(0, SEARCH_MAX_RESULTS).map(entry => entry.item),
+    total: matched.length
+  };
+}
+
 // ---- Selectors ----
 const selectors = {
   isBookmarked: (state, id) => state.bookmarks.some(item => item.id === id),
@@ -270,7 +354,8 @@ const store = Redux.createStore(
     offline: offlineReducer,
     weather: weatherReducer,
     preferences: preferencesReducer,
-    rss: rssReducer
+    rss: rssReducer,
+    search: searchReducer
   }),
   window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );
